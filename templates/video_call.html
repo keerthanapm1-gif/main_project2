@@ -1,0 +1,62 @@
+{% extends 'base.html' %}
+
+{% block title %}Video Call | Luxia{% endblock %}
+
+{% block content %}
+<div class="container" style="max-width: 1000px; height: calc(100vh - 120px); display: flex; flex-direction: column;">
+
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+        <h2 style="display: flex; align-items: center; gap: 0.5rem; margin: 0;">
+            <i class="ph-fill ph-video-camera" style="color: var(--primary-color);"></i> Property Tour Video Call
+        </h2>
+
+        <button onclick="window.close();" class="btn btn-secondary"
+            style="display: flex; align-items: center; gap: 0.5rem;">
+            <i class="ph ph-x"></i> Leave Call
+        </button>
+    </div>
+
+    <div id="jitsi-container"
+        style="flex: 1; border-radius: 12px; overflow: hidden; background: #000; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);">
+        <!-- Jitsi Iframe goes here -->
+    </div>
+</div>
+
+<!-- Load Jitsi Meet External API -->
+<script src='https://meet.jit.si/external_api.js'></script>
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const domain = 'meet.jit.si';
+        const options = {
+            roomName: 'LuxiaProperty_{{ room_name }}',
+            width: '100%',
+            height: '100%',
+            parentNode: document.querySelector('#jitsi-container'),
+            userInfo: {
+                displayName: '{{ user_name }}'
+            },
+            configOverwrite: {
+                startWithAudioMuted: false,
+                startWithVideoMuted: false,
+            },
+            interfaceConfigOverwrite: {
+                SHOW_JITSI_WATERMARK: false,
+                SHOW_WATERMARK_FOR_GUESTS: false,
+                TOOLBAR_BUTTONS: [
+                    'microphone', 'camera', 'closedcaptions', 'desktop', 'fullscreen',
+                    'fodeviceselection', 'hangup', 'profile', 'info', 'chat', 'recording',
+                    'livestreaming', 'etherpad', 'sharedvideo', 'settings', 'raisehand',
+                    'videoquality', 'filmstrip', 'invite', 'feedback', 'stats', 'shortcuts',
+                    'tileview', 'videobackgroundblur', 'download', 'help', 'mute-everyone'
+                ],
+            }
+        };
+        const api = new JitsiMeetExternalAPI(domain, options);
+
+        api.addEventListener('videoConferenceLeft', () => {
+            // Go back to the previous page when they hang up
+            window.history.back();
+        });
+    });
+</script>
+{% endblock %}

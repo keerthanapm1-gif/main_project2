@@ -1,0 +1,356 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ property.title }} | Luxia{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="detail-header" style="padding: 0; background: transparent; border: none;">
+        <div style="display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 1rem;">
+            <div>
+                <div class="property-address" style="margin-bottom: 0.5rem; font-size: 1rem;"><a
+                        href="{% url 'properties' %}" style="color: var(--primary-color);">Properties</a> / {{
+                    property.city }}</div>
+                <div style="display: flex; align-items: center; gap: 1rem;">
+                    <h1 style="margin-bottom: 0;">{{ property.title }}</h1>
+                    <button id="wishlist-btn" data-url="{% url 'toggle_wishlist' property.id %}"
+                        style="background: none; border: none; cursor: pointer; font-size: 1.8rem; color: var(--primary-color); display: flex; align-items: center; justify-content: center; margin-top: 5px;">
+                        {% if in_wishlist %}
+                        <i class="ph-fill ph-heart"></i>
+                        {% else %}
+                        <i class="ph ph-heart"></i>
+                        {% endif %}
+                    </button>
+                </div>
+            </div>
+            <div class="property-price" style="font-size: 2.25rem;">₹ {{ property.price }}</div>
+        </div>
+    </div>
+
+    <div class="detail-grid">
+        <div class="main-details">
+            <div class="detail-img-container" style="position: relative;">
+                <div class="property-badge"
+                    style="position: absolute; top: 10px; left: 10px; background: var(--primary-color); color: white; padding: 5px 10px; border-radius: 4px; z-index: 10;">
+                    {{ property.get_status_display }}</div>
+                {% if property.image %}
+                <img src="{{ property.image.url }}" alt="{{ property.title }}" style="width: 100%; border-radius: 8px;">
+                {% else %}
+                <img src="https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80"
+                    alt="Placeholder" style="width: 100%; border-radius: 8px;">
+                {% endif %}
+            </div>
+
+            {% if property.virtual_tour_url %}
+            <div class="virtual-tour-section" style="margin-top: 15px;">
+                <h3 style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 1rem;"><i
+                        class="ph-fill ph-video-camera" style="color: var(--primary-color);"></i> Virtual Property Tour
+                </h3>
+                <div
+                    style="border-radius: 8px; overflow: hidden; height: 400px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);">
+                    <iframe src="{{ property.virtual_tour_url }}" width="100%" height="100%" frameborder="0"
+                        allowfullscreen allow="xr-spatial-tracking"></iframe>
+                </div>
+            </div>
+            {% endif %}
+
+            {% if property.images.exists %}
+            <div class="image-gallery"
+                style="display: flex; gap: 10px; margin-top: 15px; overflow-x: auto; padding-bottom: 10px;">
+                {% for img in property.images.all %}
+                <img src="{{ img.image.url }}" alt="Gallery Image"
+                    style="height: 100px; border-radius: 6px; cursor: pointer;">
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            {% if property.videos.exists %}
+            <div class="video-gallery" style="margin-top: 15px;">
+                <h3>Property Videos</h3>
+                <div style="display: flex; gap: 10px; overflow-x: auto;">
+                    {% for vid in property.videos.all %}
+                    <video controls style="height: 200px; border-radius: 8px;">
+                        <source src="{{ vid.video.url }}" type="video/mp4">
+                        Your browser does not support the video tag.
+                    </video>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Exclusive Offers Section -->
+            <div class="detail-card"
+                style="background: linear-gradient(135deg, rgba(255, 51, 102, 0.05), rgba(255, 153, 51, 0.05)); border: 1px solid rgba(255, 51, 102, 0.2); box-shadow: 0 8px 20px rgba(255, 51, 102, 0.08);">
+                <h3 style="display: flex; align-items: center; gap: 0.5rem; color: #FF3366;">
+                    <i class="ph-fill ph-gift" style="font-size: 1.5rem;"></i> Exclusive Offers
+                </h3>
+                <div
+                    style="padding: 1.25rem; background: white; border-radius: 8px; border-left: 4px solid #FF3366; display: flex; align-items: flex-start; gap: 1rem; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
+                    <div
+                        style="background: rgba(255, 51, 102, 0.1); padding: 12px; border-radius: 50%; color: #FF3366; display: flex; align-items: center; justify-content: center;">
+                        <i class="ph-fill ph-seal-percent" style="font-size: 1.5rem;"></i>
+                    </div>
+                    <div>
+                        <h4 style="margin-bottom: 0.35rem; font-weight: 700; font-size: 1.1rem; color: #111827;">Zero
+                            Processing Fees + Assured Gift</h4>
+                        <p style="margin: 0; font-size: 0.95rem; color: var(--text-muted); line-height: 1.5;">Book this
+                            property today and get a <strong>100% waiver</strong> on processing fees along with a
+                            guaranteed exciting home appliance on successful registration. Available for a limited time
+                            only!</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="detail-card">
+                <h3>Overview</h3>
+                <div style="display: flex; gap: 2rem; margin-bottom: 1.5rem; flex-wrap: wrap;">
+                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                        <i class="ph ph-bed" style="font-size: 1.5rem; color: var(--text-muted);"></i>
+                        <div>
+                            <div style="font-weight: 600;">{{ property.bhk }}</div>
+                            <div style="font-size: 0.875rem; color: var(--text-muted);">Bedrooms</div>
+                        </div>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                        <i class="ph ph-square-logo" style="font-size: 1.5rem; color: var(--text-muted);"></i>
+                        <div>
+                            <div style="font-weight: 600;">{{ property.sqft }}</div>
+                            <div style="font-size: 0.875rem; color: var(--text-muted);">Square Feet</div>
+                        </div>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                        <i class="ph ph-calendar" style="font-size: 1.5rem; color: var(--text-muted);"></i>
+                        <div>
+                            <div style="font-weight: 600;">{{ property.created_at|date:"M Y" }}</div>
+                            <div style="font-size: 0.875rem; color: var(--text-muted);">Listed On</div>
+                        </div>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                        <i class="ph ph-house" style="font-size: 1.5rem; color: var(--text-muted);"></i>
+                        <div>
+                            <div style="font-weight: 600;">{{ property.get_property_type_display }}</div>
+                            <div style="font-size: 0.875rem; color: var(--text-muted);">Type</div>
+                        </div>
+                    </div>
+                </div>
+
+                {% if property.offers %}
+                <div
+                    style="background: #f0fdf4; border-left: 4px solid #16a34a; padding: 1rem; margin-bottom: 1.5rem; border-radius: 0 4px 4px 0;">
+                    <h4 style="color: #166534; margin-top: 0; margin-bottom: 0.5rem;"><i class="ph-fill ph-tag"></i>
+                        Special Offer</h4>
+                    <p style="color: #15803d; margin: 0;">{{ property.offers }}</p>
+                </div>
+                {% endif %}
+
+                <h3>Description</h3>
+                <p style="color: var(--text-muted); line-height: 1.8;">{{ property.description }}</p>
+                <p style="color: var(--text-muted); line-height: 1.8;">Address: {{ property.address }}, {{ property.city
+                    }}, {{ property.state }} - {{ property.pincode }}</p>
+                {% if property.survey_number %}
+                <p style="color: var(--text-muted); line-height: 1.8;"><strong>Survey/Plot Number:</strong> {{
+                    property.survey_number }}</p>
+                {% endif %}
+            </div>
+
+            <div class="detail-card">
+                <h3>Live Location</h3>
+                <p style="color: var(--text-muted); margin-bottom: 1rem;"><i class="ph-fill ph-map-pin"></i>
+                    Coordinates: {{ property.latitude }}, {{ property.longitude }}</p>
+                <div class="map-container">
+                    <iframe width="100%" height="100%" frameborder="0" scrolling="no" marginheight="0" marginwidth="0"
+                        src="https://maps.google.com/maps?q={{ property.latitude }},{{ property.longitude }}&z=15&output=embed">
+                    </iframe>
+                </div>
+            </div>
+
+            <div class="detail-card" style="margin-top: 2rem;">
+                <h3>Reviews ({{ reviews.count }})</h3>
+                {% if user.is_authenticated %}
+                <form method="POST" action="{% url 'add_review' property.id %}"
+                    style="margin-bottom: 2rem; background: #f8fafc; padding: 1.5rem; border-radius: 8px;">
+                    {% csrf_token %}
+                    <h4 style="margin-top: 0; margin-bottom: 1rem;">Write a Review</h4>
+                    <div style="margin-bottom: 1rem;">
+                        <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Rating (1-5)</label>
+                        {{ review_form.rating }}
+                    </div>
+                    <div style="margin-bottom: 1rem;">
+                        <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Review</label>
+                        {{ review_form.review_text }}
+                    </div>
+                    <button type="submit" class="btn btn-primary">Submit Review</button>
+                </form>
+                {% else %}
+                <p style="margin-bottom: 2rem; background: #f8fafc; padding: 1rem; border-radius: 8px;"><a
+                        href="{% url 'login' %}?next={{ request.path }}"
+                        style="color: var(--primary-color); font-weight: 600;">Log in</a> to leave a review.</p>
+                {% endif %}
+
+                <div class="reviews-list">
+                    {% for review in reviews %}
+                    <div style="border-bottom: 1px solid #eee; padding-bottom: 1.5rem; margin-bottom: 1.5rem;">
+                        <div
+                            style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.5rem;">
+                            <div style="font-weight: 600; font-size: 1.1rem;">{{ review.user.username }}</div>
+                            <div style="color: #fbbf24; font-size: 1.1rem;">
+                                {{ review.rating }} / 5 <i class="ph-fill ph-star"></i>
+                            </div>
+                        </div>
+                        <p style="color: var(--text-color); margin: 0 0 0.5rem 0; line-height: 1.6;">{{
+                            review.review_text }}</p>
+                        <small style="color: var(--text-muted);">{{ review.created_at|date:"M d, Y" }}</small>
+                    </div>
+                    {% empty %}
+                    <p style="color: var(--text-muted);">No reviews yet. Be the first to review this property!</p>
+                    {% endfor %}
+                </div>
+            </div>
+
+            {% if recommended_properties %}
+            <div style="margin-top: 4rem; padding-top: 3rem; border-top: 1px solid #e2e8f0;">
+                <h2
+                    style="font-size: 1.75rem; font-weight: 700; margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.5rem;">
+                    <i class="ph-fill ph-sparkle" style="color: var(--primary-color);"></i> Similar Properties
+                    Recommended For You
+                </h2>
+
+                <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1.5rem;">
+                    {% for rec_prop in recommended_properties %}
+                    <a href="{% url 'property_detail' rec_prop.id %}"
+                        style="text-decoration: none; color: inherit; display: block; background: white; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); transition: transform 0.2s, box-shadow 0.2s;">
+                        <div style="height: 200px; overflow: hidden;">
+                            {% if rec_prop.image %}
+                            <img src="{{ rec_prop.image.url }}" alt="{{ rec_prop.title }}"
+                                style="width: 100%; height: 100%; object-fit: cover;">
+                            {% else %}
+                            <div
+                                style="width: 100%; height: 100%; background: #e2e8f0; display: flex; align-items: center; justify-content: center;">
+                                <i class="ph ph-image" style="font-size: 2rem; color: #94a3b8;"></i>
+                            </div>
+                            {% endif %}
+                        </div>
+                        <div style="padding: 1.25rem;">
+                            <div
+                                style="font-weight: 700; font-size: 1.125rem; margin-bottom: 0.25rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                                {{ rec_prop.title }}</div>
+                            <div style="color: var(--text-muted); font-size: 0.875rem; margin-bottom: 0.5rem;"><i
+                                    class="ph ph-map-pin"></i> {{ rec_prop.city }}, {{ rec_prop.state }}</div>
+                            <div style="font-weight: 700; color: var(--primary-color); font-size: 1.25rem;">
+                                {% load humanize %}
+                                ₹ {{ rec_prop.price|intcomma }}
+                            </div>
+                        </div>
+                    </a>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <div class="sidebar">
+            <div class="detail-card">
+                <h3>Contact Seller</h3>
+                <div class="seller-info" style="display: flex; justify-content: space-between; align-items: center;">
+                    <div style="display: flex; gap: 1rem; align-items: center;">
+                        <div class="seller-avatar">{{ property.seller_name|make_list|first }}</div>
+                        <div>
+                            <div style="font-weight: 600; font-size: 1.125rem;">{{ property.seller_name }}</div>
+                            <div style="color: var(--text-muted); font-size: 0.875rem;">Property Owner</div>
+                        </div>
+                    </div>
+                    {% if user.is_authenticated %}
+                    {% if seller_user and seller_user != request.user %}
+                    <div style="display: flex; gap: 0.5rem;">
+                        <a href="{% url 'chat_detail' seller_user.id %}" class="btn btn-secondary"
+                            style="padding: 0.5rem; display: flex; align-items: center; justify-content: center; border-radius: 50%; width: 40px; height: 40px;"
+                            title="Chat with Seller">
+                            <i class="ph-fill ph-chat-circle-dots" style="font-size: 1.5rem;"></i>
+                        </a>
+                        <a href="{% url 'video_call_room' room_name=video_room_name %}" target="_blank"
+                            class="btn btn-primary"
+                            style="padding: 0.5rem; display: flex; align-items: center; justify-content: center; border-radius: 50%; width: 40px; height: 40px;"
+                            title="Video Call Seller">
+                            <i class="ph-fill ph-video-camera" style="font-size: 1.5rem;"></i>
+                        </a>
+                    </div>
+                    {% endif %}
+                    {% endif %}
+                </div>
+
+                <div style="margin-top: 1.5rem;">
+                    <form method="POST" action="{% url 'contact_seller' property.id %}">
+                        {% csrf_token %}
+                        <div style="margin-bottom: 1rem;">
+                            <input type="text" name="name" class="form-input" placeholder="Your Name" required>
+                        </div>
+                        <div style="margin-bottom: 1rem;">
+                            <input type="email" name="email" class="form-input" placeholder="Your Email" required>
+                        </div>
+                        <div style="margin-bottom: 1rem;">
+                            <input type="text" name="phone" class="form-input" placeholder="Your Phone" required>
+                        </div>
+                        <div style="margin-bottom: 1rem;">
+                            <textarea name="message" class="form-input" rows="3" placeholder="I am interested..."
+                                required></textarea>
+                        </div>
+                        <div style="margin-bottom: 1rem;">
+                            <select name="inquiry_type" class="form-input" required>
+                                <option value="email">Send Email</option>
+                                <option value="whatsapp">Contact via WhatsApp</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="btn btn-primary" style="width: 100%;">Send Inquiry</button>
+                    </form>
+                </div>
+
+                {% if property.free_vehicle_facility %}
+                <div
+                    style="margin-top: 1.5rem; text-align: center; padding: 1rem; background: #fffbeb; border: 1px dashed #d97706; border-radius: 8px;">
+                    <i class="ph-fill ph-car" style="font-size: 2rem; color: #d97706; margin-bottom: 0.5rem;"></i>
+                    <p style="margin: 0; color: #92400e; font-weight: 600;">Free Vehicle Facility Available for Site
+                        Visit</p>
+                </div>
+                {% endif %}
+            </div>
+
+            <div class="detail-card">
+                <h3>Nearby Facilities</h3>
+                {% if property.facilities.exists %}
+                <ul class="facility-list">
+                    {% for facility in property.facilities.all %}
+                    <li class="facility-item">
+                        <span><i class="ph-fill ph-check-circle"
+                                style="color: var(--success); margin-right: 0.5rem;"></i> {{ facility.name }}</span>
+                        <span style="color: var(--text-muted);">{{ facility.distance_km }} km</span>
+                    </li>
+                    {% endfor %}
+                </ul>
+                {% else %}
+                <p style="color: var(--text-muted);">No facilities listed.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.getElementById('wishlist-btn').addEventListener('click', function () {
+        const url = this.getAttribute('data-url');
+        fetch(url, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}',
+            }
+        })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'added') {
+                    this.innerHTML = '<i class="ph-fill ph-heart"></i>';
+                } else if (data.status === 'removed') {
+                    this.innerHTML = '<i class="ph ph-heart"></i>';
+                }
+            })
+            .catch(error => console.error('Error:', error));
+    });
+</script>
+{% endblock %}

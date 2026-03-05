@@ -1,0 +1,45 @@
+{% extends 'base.html' %}
+
+{% block title %}My Chats | Luxia{% endblock %}
+
+{% block content %}
+<div class="container" style="max-width: 800px;">
+    <h2 style="margin-bottom: 2rem; display: flex; align-items: center; gap: 0.5rem;">
+        <i class="ph-fill ph-chat-circle-dots" style="color: var(--primary-color);"></i> My Chats
+    </h2>
+
+    <div class="chat-list"
+        style="background: white; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); overflow: hidden;">
+        {% if users_chatted_with %}
+        <ul style="list-style: none; padding: 0; margin: 0;">
+            {% for chat_user in users_chatted_with %}
+            <li style="border-bottom: 1px solid #f1f5f9; transition: background 0.2s;">
+                <a href="{% url 'chat_detail' chat_user.id %}"
+                    style="display: flex; align-items: center; padding: 1.5rem; text-decoration: none; color: inherit; gap: 1rem;">
+                    <div
+                        style="width: 50px; height: 50px; border-radius: 50%; background: var(--primary-color); color: white; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; font-weight: 600;">
+                        {{ chat_user.username|make_list|first|upper }}
+                    </div>
+                    <div>
+                        <div style="font-weight: 600; font-size: 1.1rem; color: var(--text-color);">{{
+                            chat_user.username }}</div>
+                        <div style="color: var(--text-muted); font-size: 0.9rem; margin-top: 0.2rem;">Click to view
+                            conversation</div>
+                    </div>
+                    <i class="ph ph-caret-right" style="margin-left: auto; color: #cbd5e1; font-size: 1.5rem;"></i>
+                </a>
+            </li>
+            {% endfor %}
+        </ul>
+        {% else %}
+        <div style="padding: 3rem; text-align: center; color: var(--text-muted);">
+            <i class="ph ph-chats" style="font-size: 4rem; color: #cbd5e1; margin-bottom: 1rem;"></i>
+            <h3 style="margin-bottom: 0.5rem; color: var(--text-color);">No Chats Yet</h3>
+            <p>When you inquire about properties, your conversations with sellers will appear here.</p>
+            <a href="{% url 'properties' %}" class="btn btn-primary"
+                style="margin-top: 1.5rem; display: inline-block;">Browse Properties</a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

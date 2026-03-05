@@ -1,0 +1,236 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Meta tags for SEO -->
+    <meta name="description"
+        content="Find your dream home with our premium real estate platform featuring listings across India.">
+    <title>{% block title %}Luxia Real Estate - Premium Homes{% endblock %}</title>
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <!-- Phosphor Icons for elegant UI icons -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+</head>
+
+<body>
+    <nav class="navbar">
+        <a href="{% url 'home' %}" class="navbar-brand">
+            <i class="ph-fill ph-house-line"></i> Luxia
+        </a>
+        <div class="nav-links">
+            <a href="{% url 'home' %}">Home</a>
+            <a href="{% url 'properties' %}">Properties</a>
+            <a href="{% url 'about' %}">About</a>
+            <a href="{% url 'price_estimator' %}">Price Predictor</a>
+            {% if user.is_authenticated %}
+            <span style="color: var(--text-muted);">Hello, {{ user.username }}!</span>
+            <a href="{% url 'logout' %}" class="btn btn-secondary" style="padding: 0.5rem 1rem;">Logout</a>
+            {% else %}
+            <a href="{% url 'login' %}">Login</a>
+            <a href="{% url 'register' %}" class="btn btn-primary" style="padding: 0.5rem 1rem;">Register</a>
+            {% endif %}
+        </div>
+    </nav>
+
+    <!-- Flash Messages Component -->
+    {% if messages %}
+    <div class="messages">
+        {% for message in messages %}
+        <div class="message {{ message.tags }}">
+            {% if message.tags == 'success' %}<i class="ph-fill ph-check-circle"
+                style="color:var(--success); font-size:1.5rem;"></i>{% endif %}
+            {% if message.tags == 'error' %}<i class="ph-fill ph-warning-circle"
+                style="color:var(--danger); font-size:1.5rem;"></i>{% endif %}
+            {{ message }}
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <main>
+        {% block content %}
+        {% endblock %}
+    </main>
+
+    <footer>
+        <div class="container footer-content">
+            <div class="footer-section">
+                <h4><i class="ph-fill ph-house-line"></i> Luxia Real Estate</h4>
+                <p>Bringing you the finest properties across India. We believe in providing premium transparent services
+                    to help you find your dream home.</p>
+            </div>
+            <div class="footer-section">
+                <h4>Quick Links</h4>
+                <div style="display:flex; flex-direction:column; gap:0.5rem;">
+                    <a href="{% url 'home' %}" style="color: #94a3b8;">Home</a>
+                    <a href="{% url 'properties' %}" style="color: #94a3b8;">Properties</a>
+                    <a href="{% url 'about' %}" style="color: #94a3b8;">About Us</a>
+                </div>
+            </div>
+            <div class="footer-section">
+                <h4>Contact Info</h4>
+                <div style="display:flex; flex-direction:column; gap:0.5rem; color: #94a3b8;">
+                    <span><i class="ph ph-envelope-simple"></i> contact@luxia.in</span>
+                    <span><i class="ph ph-phone"></i> +91 1800 123 4567</span>
+                    <span><i class="ph ph-map-pin"></i> 123 Prime Street, Mumbai, MH, 400001</span>
+                </div>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            &copy; 2026 Luxia Real Estate. All rights reserved.
+        </div>
+    </footer>
+
+    <script>
+        // Dismiss flash messages automatically after 5 seconds
+        document.addEventListener('DOMContentLoaded', () => {
+            const messages = document.querySelectorAll('.message');
+            messages.forEach(msg => {
+                setTimeout(() => {
+                    msg.style.opacity = '0';
+                    setTimeout(() => msg.remove(), 300);
+                }, 5000);
+            });
+        });
+    </script>
+
+    <!-- Chatbot Widget -->
+    <div id="chatbot-widget" style="position: fixed; bottom: 30px; right: 30px; z-index: 1000;">
+        <!-- Chatbot Toggler Button -->
+        <button id="chatbot-toggler"
+            style="width: 60px; height: 60px; border-radius: 50%; background: var(--primary-color); color: white; border: none; box-shadow: 0 4px 12px rgba(0,0,0,0.15); display: flex; align-items: center; justify-content: center; cursor: pointer; transition: transform 0.2s;">
+            <i class="ph-fill ph-robot" style="font-size: 2rem;"></i>
+        </button>
+
+        <!-- Chatbot Window (Hidden by default) -->
+        <div id="chatbot-window"
+            style="display: none; position: absolute; bottom: 80px; right: 0; width: 350px; height: 450px; background: white; border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.15); flex-direction: column; overflow: hidden; border: 1px solid #e2e8f0;">
+            <!-- Header -->
+            <div
+                style="background: var(--primary-color); color: white; padding: 1rem; display: flex; align-items: center; justify-content: space-between;">
+                <div style="display: flex; align-items: center; gap: 0.5rem; font-weight: 600;">
+                    <i class="ph-fill ph-robot"></i> Luxia Assistant
+                </div>
+                <button id="chatbot-close"
+                    style="background: none; border: none; color: white; cursor: pointer; display: flex; align-items: center; justify-content: center;">
+                    <i class="ph ph-x" style="font-size: 1.25rem;"></i>
+                </button>
+            </div>
+
+            <!-- Messages Area -->
+            <div id="chatbot-messages"
+                style="flex: 1; padding: 1rem; overflow-y: auto; background: #f8fafc; display: flex; flex-direction: column; gap: 0.75rem;">
+                <!-- Initial Bot Message -->
+                <div
+                    style="align-self: flex-start; max-width: 80%; background: white; padding: 0.75rem 1rem; border-radius: 0 12px 12px 12px; border: 1px solid #e2e8f0; font-size: 0.9rem; color: var(--text-color);">
+                    Hi there! I'm the Luxia Assistant. Try asking me about 'price', 'location', 'rent', or 'contact'.
+                </div>
+            </div>
+
+            <!-- Input Area -->
+            <div style="padding: 1rem; border-top: 1px solid #f1f5f9; background: white;">
+                <form id="chatbot-form" style="display: flex; gap: 0.5rem; margin: 0;">
+                    {% csrf_token %}
+                    <input type="text" id="chatbot-input"
+                        style="flex: 1; padding: 0.75rem 1rem; border: 1px solid #cbd5e1; border-radius: 20px; outline: none; font-size: 0.9rem;"
+                        placeholder="Ask me something..." autocomplete="off">
+                    <button type="submit"
+                        style="width: 40px; height: 40px; border-radius: 50%; background: var(--primary-color); color: white; border: none; display: flex; align-items: center; justify-content: center; cursor: pointer;">
+                        <i class="ph-fill ph-paper-plane-right"></i>
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const toggler = document.getElementById('chatbot-toggler');
+            const window = document.getElementById('chatbot-window');
+            const closeBtn = document.getElementById('chatbot-close');
+            const form = document.getElementById('chatbot-form');
+            const input = document.getElementById('chatbot-input');
+            const messagesContainer = document.getElementById('chatbot-messages');
+
+            // Toggle Chatbot
+            toggler.addEventListener('click', () => {
+                window.style.display = window.style.display === 'none' || window.style.display === '' ? 'flex' : 'none';
+                if (window.style.display === 'flex') {
+                    input.focus();
+                }
+            });
+
+            closeBtn.addEventListener('click', () => {
+                window.style.display = 'none';
+            });
+
+            function appendMessage(text, isUser) {
+                const msgDiv = document.createElement('div');
+                msgDiv.style.maxWidth = '80%';
+                msgDiv.style.padding = '0.75rem 1rem';
+                msgDiv.style.fontSize = '0.9rem';
+
+                if (isUser) {
+                    msgDiv.style.alignSelf = 'flex-end';
+                    msgDiv.style.background = 'var(--primary-color)';
+                    msgDiv.style.color = 'white';
+                    msgDiv.style.borderRadius = '12px 12px 0 12px';
+                } else {
+                    msgDiv.style.alignSelf = 'flex-start';
+                    msgDiv.style.background = 'white';
+                    msgDiv.style.color = 'var(--text-color)';
+                    msgDiv.style.borderRadius = '0 12px 12px 12px';
+                    msgDiv.style.border = '1px solid #e2e8f0';
+                }
+
+                msgDiv.textContent = text;
+                messagesContainer.appendChild(msgDiv);
+                messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            }
+
+            // Handle form submission
+            form.addEventListener('submit', (e) => {
+                e.preventDefault();
+                const message = input.value.trim();
+                if (!message) return;
+
+                // Append user message
+                appendMessage(message, true);
+                input.value = '';
+
+                // Append typing indicator temporarily (optional, keeping it simple here)
+
+                // Send to backend
+                const formData = new FormData();
+                formData.append('message', message);
+
+                // In base.html we need a robust way to get csrf, assuming from form
+                const csrfToken = form.querySelector('[name=csrfmiddlewaretoken]').value;
+
+                // Use absolute path for API to work on any page
+                fetch('/api/chatbot/', {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': csrfToken
+                    },
+                    body: formData
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.response) {
+                            appendMessage(data.response, false);
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Chatbot error:', error);
+                        appendMessage("Sorry, I'm having trouble connecting right now.", false);
+                    });
+            });
+        });
+    </script>
+</body>
+
+</html>

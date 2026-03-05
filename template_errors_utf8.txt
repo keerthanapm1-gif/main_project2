@@ -1,0 +1,12 @@
+[OK]     about.html
+[OK]     base.html
+[OK]     chat_detail.html
+[OK]     chat_list.html
+[OK]     home.html
+[OK]     login.html
+[OK]     price_estimator.html
+[OK]     properties.html
+[OK]     property_detail.html
+[OK]     register.html
+[OK]     video_call.html
+[OK]     wishlist.html

@@ -1,0 +1,89 @@
+{% extends 'base.html' %}
+
+{% block title %}My Wishlist | Luxia{% endblock %}
+
+{% block content %}
+<div class="container" style="padding: 3rem 1rem;">
+    <h1 style="margin-bottom: 2rem; text-align: center;">My Wishlist</h1>
+
+    {% if wishlist_items %}
+    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 2rem;">
+        {% for item in wishlist_items %}
+        <div class="property-card">
+            <div class="property-img-container" style="position: relative;">
+                <div class="property-badge"
+                    style="position: absolute; top: 10px; left: 10px; background: var(--primary-color); color: white; padding: 5px 10px; border-radius: 4px; z-index: 10;">
+                    {{ item.property.get_status_display }}
+                </div>
+
+                <button class="remove-wishlist-btn" data-url="{% url 'toggle_wishlist' item.property.id %}"
+                    style="position: absolute; top: 10px; right: 10px; background: white; border: none; border-radius: 50%; width: 35px; height: 35px; cursor: pointer; z-index: 10; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 5px rgba(0,0,0,0.2);">
+                    <i class="ph-fill ph-heart" style="color: var(--primary-color);"></i>
+                </button>
+
+                <a href="{% url 'property_detail' item.property.pk %}" style="display: block;">
+                    {% if item.property.image %}
+                    <img src="{{ item.property.image.url }}" alt="{{ item.property.title }}" class="property-img"
+                        style="width: 100%; height: 220px; object-fit: cover;">
+                    {% else %}
+                    <img src="https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80"
+                        alt="Placeholder" class="property-img" style="width: 100%; height: 220px; object-fit: cover;">
+                    {% endif %}
+                </a>
+            </div>
+            <div class="property-info" style="padding: 1.5rem;">
+                <div class="property-price"
+                    style="font-size: 1.5rem; font-weight: 700; color: var(--primary-color); margin-bottom: 0.5rem;">₹
+                    {{ item.property.price }}</div>
+                <h3 style="margin: 0 0 0.5rem 0; font-size: 1.25rem;">
+                    <a href="{% url 'property_detail' item.property.pk %}"
+                        style="color: var(--text-color); text-decoration: none;">{{ item.property.title }}</a>
+                </h3>
+                <p style="color: var(--text-muted); margin-bottom: 1rem;"><i class="ph ph-map-pin"></i> {{
+                    item.property.city }}, {{ item.property.state }}</p>
+                <div style="display: flex; gap: 1rem; color: var(--text-muted); font-size: 0.875rem;">
+                    <span><i class="ph ph-bed"></i> {{ item.property.bhk }} Beds</span>
+                    <span><i class="ph ph-square-logo"></i> {{ item.property.sqft }} sqft</span>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div style="text-align: center; padding: 4rem 1rem; background: var(--bg-color); border-radius: 8px;">
+        <i class="ph ph-heart" style="font-size: 4rem; color: var(--text-muted); margin-bottom: 1rem;"></i>
+        <h2 style="margin-bottom: 1rem;">Your wishlist is empty</h2>
+        <p style="color: var(--text-muted); margin-bottom: 2rem;">Browse properties and hit the heart icon to add them
+            here.</p>
+        <a href="{% url 'properties' %}" class="btn btn-primary">Browse Properties</a>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+    document.querySelectorAll('.remove-wishlist-btn').forEach(btn => {
+        btn.addEventListener('click', function () {
+            const url = this.getAttribute('data-url');
+            fetch(url, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token }}',
+                }
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'removed') {
+                        // Remove the card from DOM
+                        this.closest('.property-card').remove();
+                        // Optional: Show empty state if no children left
+                        const grid = document.querySelector('.container > .grid-template-columns');
+                        if (document.querySelectorAll('.property-card').length === 0) {
+                            location.reload(); // Quick way to show empty state
+                        }
+                    }
+                })
+                .catch(error => console.error('Error:', error));
+        });
+    });
+</script>
+{% endblock %}

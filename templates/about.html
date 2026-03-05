@@ -1,0 +1,41 @@
+{% extends 'base.html' %}
+
+{% block title %}About Us | Luxia Real Estate{% endblock %}
+
+{% block content %}
+<div class="hero"
+    style="height: 300px; background: linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)), url('https://images.unsplash.com/photo-1560518883-ce09059eeffa?auto=format&fit=crop&q=80&w=2000') center/cover;">
+    <div class="hero-content">
+        <h1>About Luxia</h1>
+        <p>Your Trusted Partner in Real Estate</p>
+    </div>
+</div>
+
+<div class="container" style="max-width: 800px; text-align: center;">
+    <h2 style="color: var(--primary-color);">Our Mission</h2>
+    <p style="color: var(--text-muted); font-size: 1.125rem; margin-bottom: 3rem;">
+        At Luxia Real Estate, we believe finding a home should be an exciting and transparent journey. We are dedicated
+        to connecting you with the finest properties across India, ensuring every listing meets our strict standards of
+        quality and authenticity.
+    </p>
+
+    <div
+        style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 2rem; margin-top: 3rem;">
+        <div class="detail-card" style="margin: 0;">
+            <i class="ph-fill ph-house-line" style="font-size: 3rem; color: var(--primary-color);"></i>
+            <h3>300+</h3>
+            <p style="color: var(--text-muted);">Premium Properties</p>
+        </div>
+        <div class="detail-card" style="margin: 0;">
+            <i class="ph-fill ph-map-trifold" style="font-size: 3rem; color: var(--primary-color);"></i>
+            <h3>6</h3>
+            <p style="color: var(--text-muted);">Major Cities</p>
+        </div>
+        <div class="detail-card" style="margin: 0;">
+            <i class="ph-fill ph-users" style="font-size: 3rem; color: var(--primary-color);"></i>
+            <h3>10k+</h3>
+            <p style="color: var(--text-muted);">Happy Customers</p>
+        </div>
+    </div>
+</div>
+{% endblock %}

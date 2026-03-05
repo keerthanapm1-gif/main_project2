@@ -1,0 +1,83 @@
+{% extends 'base.html' %}
+
+{% block title %}Properties | Luxia Real Estate{% endblock %}
+
+{% block content %}
+<div style="background-color: var(--text-main); color: white; padding: 4rem 5%; text-align: center;">
+    <h1>Explore All Properties</h1>
+    <p style="color: #cbd5e1; max-width: 600px; margin: 0 auto; font-size: 1.125rem;">Find the perfect property that
+        matches your criteria from our extensive catalog.</p>
+</div>
+
+<div class="container">
+    <div
+        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem;">
+        <h3 style="margin: 0;">{% if query %}Search Results for "{{ query }}"{% else %}All Available Properties{% endif %}</h3>
+
+        <form action="" method="GET" style="display: flex; gap: 0.5rem; max-width: 400px; width: 100%;">
+            <input type="text" name="q" value="{{ query|default:'' }}" class="form-input"
+                placeholder="Search city or title...">
+            <button type="submit" class="btn btn-primary" style="padding: 0.5rem 1rem;">Search</button>
+            {% if query %}
+            <a href="{% url 'properties' %}" class="btn btn-secondary" style="padding: 0.5rem 1rem;">Clear</a>
+            {% endif %}
+        </form>
+    </div>
+
+    <div class="property-grid">
+        {% for property in page_obj %}
+        <a href="{% url 'property_detail' property.id %}" style="text-decoration:none; color:inherit;">
+            <div class="property-card">
+                <div class="property-img">
+                    <div class="property-badge">For Sale</div>
+                    {% if property.image %}
+                    <img src="{{ property.image.url }}" alt="{{ property.title }}">
+                    {% else %}
+                    <img src="https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&w=800&q=80"
+                        alt="Placeholder">
+                    {% endif %}
+                </div>
+                <div class="property-content">
+                    <div class="property-price">₹ {{ property.price }}</div>
+                    <h3 class="property-title">{{ property.title }}</h3>
+                    <div class="property-address"><i class="ph-fill ph-map-pin"></i> {{ property.city }}, {{
+                        property.state }}</div>
+                    <div class="property-features">
+                        <span class="feature"><i class="ph-fill ph-bed"></i> {{ property.bhk }} BHK</span>
+                        <span class="feature"><i class="ph-fill ph-square-logo"></i> {{ property.sqft }} Sq.Ft.</span>
+                    </div>
+                </div>
+            </div>
+        </a>
+        {% empty %}
+        <div class="empty-state" style="grid-column: 1 / -1; text-align: center; padding: 4rem 0;">
+            <i class="ph ph-magnifying-glass"
+                style="font-size: 4rem; color: var(--text-muted); margin-bottom: 1rem;"></i>
+            <h3 style="color: var(--text-muted);">No properties match your search criteria.</h3>
+        </div>
+        {% endfor %}
+    </div>
+
+    {% if page_obj.has_other_pages %}
+    <div class="pagination">
+        {% if page_obj.has_previous %}
+        <a href="?page={{ page_obj.previous_page_number }}{% if query %}&q={{ query }}{% endif %}" class="page-link"><i
+                class="ph ph-caret-left"></i></a>
+        {% endif %}
+
+        {% for num in page_obj.paginator.page_range %}
+        {% if page_obj.number == num %}
+        <span class="page-link active">{{ num }}</span>
+        {% else %}
+        <a href="?page={{ num }}{% if query %}&q={{ query }}{% endif %}" class="page-link">{{ num }}</a>
+        {% endif %}
+        {% endfor %}
+
+        {% if page_obj.has_next %}
+        <a href="?page={{ page_obj.next_page_number }}{% if query %}&q={{ query }}{% endif %}" class="page-link"><i
+                class="ph ph-caret-right"></i></a>
+        {% endif %}
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

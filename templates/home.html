@@ -1,0 +1,68 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<section class="hero">
+    <div class="hero-content">
+        <h1>Discover Your Perfect Home in India</h1>
+        <p>Explore our premium collection of luxury apartments, spacious villas, and modern independent houses.</p>
+        <form action="{% url 'properties' %}" method="GET" class="search-bar">
+            <input type="text" name="q" placeholder="Search by city or property name..." required>
+            <button type="submit" class="btn btn-primary">Search</button>
+        </form>
+    </div>
+</section>
+
+<section class="container" style="margin-top: 4rem;">
+    <div style="text-align: center; margin-bottom: 3rem;">
+        <span
+            style="color: var(--primary-color); font-weight: 600; text-transform: uppercase; letter-spacing: 1px;">Featured</span>
+        <h2>Latest Premium Properties</h2>
+        <p style="color: var(--text-muted); max-width: 600px; margin: 0 auto;">Browse through our most recently added
+            exclusive properties, carefully selected to offer the best living experiences.</p>
+    </div>
+
+    <div class="property-grid">
+        {% for property in properties %}
+        <a href="{% url 'property_detail' property.id %}" style="text-decoration:none; color:inherit;">
+            <div class="property-card">
+                <div class="property-img">
+                    <div class="property-badge" style="background: var(--primary-color);">{{ property.get_status_display
+                        }}</div>
+                    <!-- Global Offer Badge -->
+                    <div
+                        style="position: absolute; top: 12px; right: 12px; background: linear-gradient(135deg, #FF3366, #FF9933); color: white; padding: 4px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: 700; box-shadow: 0 4px 12px rgba(255, 51, 102, 0.4); z-index: 10; display: inline-flex; align-items: center; gap: 4px; letter-spacing: 0.5px;">
+                        <i class="ph-fill ph-sparkle"></i> Launch Offer
+                    </div>
+                    {% if property.image %}
+                    <img src="{{ property.image.url }}" alt="{{ property.title }}">
+                    {% else %}
+                    <img src="https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&w=800&q=80"
+                        alt="Placeholder">
+                    {% endif %}
+                </div>
+                <div class="property-content">
+                    <div class="property-price">₹ {{ property.price }}</div>
+                    <h3 class="property-title">{{ property.title }}</h3>
+                    <div class="property-address"><i class="ph-fill ph-map-pin"></i> {{ property.city }}, {{
+                        property.state }}</div>
+                    <div class="property-features">
+                        <span class="feature"><i class="ph-fill ph-house"></i> {{ property.get_property_type_display
+                            }}</span>
+                        <span class="feature"><i class="ph-fill ph-bed"></i> {{ property.bhk }} BHK</span>
+                        <span class="feature"><i class="ph-fill ph-square-logo"></i> {{ property.sqft }} Sq.Ft.</span>
+                    </div>
+                </div>
+            </div>
+        </a>
+        {% empty %}
+        <p style="grid-column: 1 / -1; text-align: center; color: var(--text-muted); font-size: 1.25rem;">No properties
+            found at the moment.</p>
+        {% endfor %}
+    </div>
+
+    <div style="text-align: center; margin-top: 3rem;">
+        <a href="{% url 'properties' %}" class="btn btn-secondary">View All Properties</a>
+    </div>
+</section>
+{% endblock %}

@@ -1,0 +1,180 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Price Predictor | Luxia{% endblock %}
+
+{% block content %}
+<div class="container" style="padding-top: 4rem; padding-bottom: 4rem;">
+    <div style="text-align: center; margin-bottom: 3rem;">
+        <h1 style="font-size: 2.5rem; font-weight: 700; margin-bottom: 1rem;"><i class="ph-fill ph-magic-wand"
+                style="color: var(--primary-color);"></i> AI Price Predictor</h1>
+        <p style="color: var(--text-muted); font-size: 1.125rem; max-width: 600px; margin: 0 auto;">Enter property
+            details to get an instant AI-powered price estimate based on market trends and location data.</p>
+    </div>
+
+    <div
+        style="max-width: 600px; margin: 0 auto; background: white; padding: 2.5rem; border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.05);">
+        <form id="price-estimator-form">
+            <div style="margin-bottom: 1.5rem;">
+                <label for="city" style="display: block; font-weight: 600; margin-bottom: 0.5rem;">City</label>
+                <input type="text" id="city" name="city" required placeholder="e.g. Mumbai, Bangalore"
+                    style="width: 100%; padding: 0.75rem 1rem; border: 1px solid #cbd5e1; border-radius: 8px; outline: none; transition: border-color 0.2s;">
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem;">
+                <div>
+                    <label for="bhk" style="display: block; font-weight: 600; margin-bottom: 0.5rem;">BHK</label>
+                    <select id="bhk" name="bhk" required
+                        style="width: 100%; padding: 0.75rem 1rem; border: 1px solid #cbd5e1; border-radius: 8px; outline: none; background: white;">
+                        <option value="1">1 BHK</option>
+                        <option value="2" selected>2 BHK</option>
+                        <option value="3">3 BHK</option>
+                        <option value="4">4+ BHK</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="area" style="display: block; font-weight: 600; margin-bottom: 0.5rem;">Area
+                        (Sq.Ft)</label>
+                    <input type="number" id="area" name="area" required min="100" placeholder="e.g. 1200"
+                        style="width: 100%; padding: 0.75rem 1rem; border: 1px solid #cbd5e1; border-radius: 8px; outline: none;">
+                </div>
+            </div>
+
+            <button type="submit" class="btn btn-primary"
+                style="width: 100%; padding: 1rem; font-size: 1.125rem; justify-content: center;">
+                <i class="ph-fill ph-calculator"></i> Calculate Estimate
+            </button>
+        </form>
+
+        <!-- Result Section -->
+        <div id="result-container"
+            style="display: none; margin-top: 2rem; padding-top: 2rem; border-top: 1px solid #e2e8f0; text-align: center; animation: slideUp 0.3s ease-out;">
+            <p style="color: var(--text-muted); font-weight: 500; margin-bottom: 0.5rem;">Estimated Property Value</p>
+            <h2 id="estimated-price"
+                style="font-size: 3rem; font-weight: 700; color: var(--primary-color); margin-bottom: 1rem;">₹ --</h2>
+
+            <div
+                style="display: inline-flex; align-items: center; gap: 0.5rem; background: #f1f5f9; padding: 0.5rem 1rem; border-radius: 20px; font-size: 0.875rem; color: #475569;">
+                <i class="ph-fill ph-info"></i>
+                <span>Confidence Level: <strong id="confidence-level">High</strong></span>
+            </div>
+        </div>
+
+        <!-- Similar Properties Section -->
+        <div id="similar-properties-container"
+            style="display: none; margin-top: 3rem; animation: slideUp 0.4s ease-out;">
+            <h3
+                style="font-size: 1.5rem; font-weight: 700; margin-bottom: 1.5rem; border-bottom: 2px solid #e2e8f0; padding-bottom: 0.5rem; text-align: left;">
+                Similar Properties</h3>
+            <div id="similar-properties-grid"
+                style="display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 1.5rem; text-align: left;">
+                <!-- Cards injected here -->
+            </div>
+        </div>
+
+        <!-- Loading Spinner -->
+        <div id="loading" style="display: none; margin-top: 2rem; text-align: center;">
+            <i class="ph ph-spinner ph-spin" style="font-size: 2rem; color: var(--primary-color);"></i>
+            <p style="color: var(--text-muted); margin-top: 0.5rem;">Analyzing market data...</p>
+        </div>
+    </div>
+</div>
+
+<style>
+    @keyframes slideUp {
+        from {
+            opacity: 0;
+            transform: translateY(10px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    input:focus,
+    select:focus {
+        border-color: var(--primary-color) !important;
+    }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const form = document.getElementById('price-estimator-form');
+        const resultContainer = document.getElementById('result-container');
+        const loading = document.getElementById('loading');
+        const priceEl = document.getElementById('estimated-price');
+        const confidenceEl = document.getElementById('confidence-level');
+
+        form.addEventListener('submit', (e) => {
+            e.preventDefault();
+
+            // Hide result and similar properties, show loading
+            resultContainer.style.display = 'none';
+            document.getElementById('similar-properties-container').style.display = 'none';
+            loading.style.display = 'block';
+
+            const city = document.getElementById('city').value;
+            const bhk = document.getElementById('bhk').value;
+            const area = document.getElementById('area').value;
+
+            fetch(`/api/estimate-price/?city=${encodeURIComponent(city)}&bhk=${encodeURIComponent(bhk)}&area=${encodeURIComponent(area)}`)
+                .then(res => res.json())
+                .then(data => {
+                    loading.style.display = 'none';
+                    if (data.error) {
+                        alert(data.error);
+                    } else {
+                        priceEl.textContent = data.estimated_price;
+                        confidenceEl.textContent = data.confidence;
+
+                        if (data.confidence === 'High') {
+                            confidenceEl.style.color = '#10b981'; // Green
+                        } else {
+                            confidenceEl.style.color = '#f59e0b'; // Amber
+                        }
+
+                        resultContainer.style.display = 'block';
+
+                        // Handle similar properties
+                        const simContainer = document.getElementById('similar-properties-container');
+                        const simGrid = document.getElementById('similar-properties-grid');
+
+                        if (data.similar_properties && data.similar_properties.length > 0) {
+                            simGrid.innerHTML = '';
+                            data.similar_properties.forEach(prop => {
+                                const imgHtml = prop.image_url
+                                    ? `<img src="${prop.image_url}" alt="${prop.title}" style="width: 100%; height: 160px; object-fit: cover; border-radius: 8px 8px 0 0;">`
+                                    : `<div style="width: 100%; height: 160px; background: #e2e8f0; border-radius: 8px 8px 0 0; display: flex; align-items: center; justify-content: center; color: #94a3b8;"><i class="ph ph-image" style="font-size: 2rem;"></i></div>`;
+
+                                const card = `
+                                    <div style="border: 1px solid #e2e8f0; border-radius: 8px; transition: transform 0.2s, box-shadow 0.2s; background: white; cursor: pointer;" onmouseover="this.style.transform='translateY(-5px)'; this.style.boxShadow='0 10px 15px -3px rgba(0, 0, 0, 0.1)'" onmouseout="this.style.transform='none'; this.style.boxShadow='none'" onclick="window.location.href='/property/${prop.id}/'">
+                                        ${imgHtml}
+                                        <div style="padding: 1rem;">
+                                            <h4 style="font-size: 1.125rem; font-weight: 600; margin-bottom: 0.5rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${prop.title}">${prop.title}</h4>
+                                            <p style="color: var(--primary-color); font-weight: 700; font-size: 1.25rem; margin-bottom: 0.5rem;">${prop.formatted_price}</p>
+                                            <div style="display: flex; gap: 1rem; color: #64748b; font-size: 0.875rem;">
+                                                <span style="display: flex; align-items: center; gap: 0.25rem;"><i class="ph ph-bed"></i> ${prop.bhk} BHK</span>
+                                                <span style="display: flex; align-items: center; gap: 0.25rem;"><i class="ph ph-map-pin"></i> ${prop.city}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                `;
+                                simGrid.innerHTML += card;
+                            });
+                            simContainer.style.display = 'block';
+                        } else {
+                            simContainer.style.display = 'none';
+                        }
+                    }
+                })
+                .catch(err => {
+                    loading.style.display = 'none';
+                    console.error('Error fetching price estimate:', err);
+                    alert("An error occurred while estimating the price. Please try again.");
+                });
+        });
+    });
+</script>
+{% endblock %}

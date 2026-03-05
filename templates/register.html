@@ -1,0 +1,46 @@
+{% extends 'base.html' %}
+
+{% block title %}Register | Luxia Real Estate{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="form-container">
+        <h2 style="text-align: center; color: var(--primary-color); margin-bottom: 2rem;">Create an Account</h2>
+
+        <form method="POST">
+            {% csrf_token %}
+            {% for field in form %}
+            <div class="form-group">
+                <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                {% if field.errors %}
+                <div style="color: var(--danger); font-size: 0.875rem; margin-bottom: 0.5rem;">{{ field.errors.0 }}
+                </div>
+                {% endif %}
+                {{ field }}
+            </div>
+            {% endfor %}
+            <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 1rem;">Register</button>
+        </form>
+
+        <p style="text-align: center; margin-top: 1.5rem; color: var(--text-muted);">
+            Already have an account? <a href="{% url 'login' %}" style="font-weight: 500;">Login here</a>
+        </p>
+    </div>
+</div>
+
+<style>
+    .form-container input {
+        border-radius: 8px;
+        padding: 0.75rem 1rem;
+        border: 1px solid var(--border-color);
+        width: 100%;
+        font-size: 1rem;
+    }
+
+    .form-container input:focus {
+        border-color: var(--primary-color);
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+    }
+</style>
+{% endblock %}
