@@ -1,83 +1,288 @@
 {% extends 'base.html' %}
+{% load static %}
+{% load humanize %}
 
 {% block title %}Properties | Luxia Real Estate{% endblock %}
 
 {% block content %}
-<div style="background-color: var(--text-main); color: white; padding: 4rem 5%; text-align: center;">
-    <h1>Explore All Properties</h1>
-    <p style="color: #cbd5e1; max-width: 600px; margin: 0 auto; font-size: 1.125rem;">Find the perfect property that
-        matches your criteria from our extensive catalog.</p>
-</div>
+<div class="container" style="padding-top: 3rem;">
+    <div class="properties-layout">
+        <!-- Left Sidebar Filters -->
+        <aside class="filters-sidebar">
+            <h3 style="margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.5rem;">
+                <i class="ph ph-sliders"></i> Filters
+            </h3>
 
-<div class="container">
-    <div
-        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem;">
-        <h3 style="margin: 0;">{% if query %}Search Results for "{{ query }}"{% else %}All Available Properties{% endif %}</h3>
-
-        <form action="" method="GET" style="display: flex; gap: 0.5rem; max-width: 400px; width: 100%;">
-            <input type="text" name="q" value="{{ query|default:'' }}" class="form-input"
-                placeholder="Search city or title...">
-            <button type="submit" class="btn btn-primary" style="padding: 0.5rem 1rem;">Search</button>
-            {% if query %}
-            <a href="{% url 'properties' %}" class="btn btn-secondary" style="padding: 0.5rem 1rem;">Clear</a>
-            {% endif %}
-        </form>
-    </div>
-
-    <div class="property-grid">
-        {% for property in page_obj %}
-        <a href="{% url 'property_detail' property.id %}" style="text-decoration:none; color:inherit;">
-            <div class="property-card">
-                <div class="property-img">
-                    <div class="property-badge">For Sale</div>
-                    {% if property.image %}
-                    <img src="{{ property.image.url }}" alt="{{ property.title }}">
-                    {% else %}
-                    <img src="https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&w=800&q=80"
-                        alt="Placeholder">
-                    {% endif %}
+            <form action="" method="GET" id="filter-form">
+                <!-- Search Query -->
+                <div class="filter-group">
+                    <label style="font-weight: 600; display: block; margin-bottom: 0.5rem;">Search</label>
+                    <input type="text" name="q" value="{{ query|default:'' }}" class="form-input"
+                        placeholder="City or title...">
                 </div>
-                <div class="property-content">
-                    <div class="property-price">₹ {{ property.price }}</div>
-                    <h3 class="property-title">{{ property.title }}</h3>
-                    <div class="property-address"><i class="ph-fill ph-map-pin"></i> {{ property.city }}, {{
-                        property.state }}</div>
-                    <div class="property-features">
-                        <span class="feature"><i class="ph-fill ph-bed"></i> {{ property.bhk }} BHK</span>
-                        <span class="feature"><i class="ph-fill ph-square-logo"></i> {{ property.sqft }} Sq.Ft.</span>
+
+                <!-- BHK Filter -->
+                <div class="filter-group">
+                    <label style="font-weight: 600; display: block; margin-bottom: 0.75rem;">BHK Type</label>
+                    <div class="chip-group">
+                        <label class="filter-chip {% if request.GET.bhk == '1' %}active{% endif %}">
+                            <input type="radio" name="bhk" value="1" style="display:none;" {% if request.GET.bhk == '1' %}checked{% endif %}> 1 BHK
+                        </label>
+                        <label class="filter-chip {% if request.GET.bhk == '2' %}active{% endif %}">
+                            <input type="radio" name="bhk" value="2" style="display:none;" {% if request.GET.bhk == '2' %}checked{% endif %}> 2 BHK
+                        </label>
+                        <label class="filter-chip {% if request.GET.bhk == '3' %}active{% endif %}">
+                            <input type="radio" name="bhk" value="3" style="display:none;" {% if request.GET.bhk == '3' %}checked{% endif %}> 3 BHK
+                        </label>
                     </div>
                 </div>
+
+                <!-- Price Range -->
+                <div class="filter-group">
+                    <label style="font-weight: 600; display: block; margin-bottom: 0.75rem;">Price Range</label>
+                    <div style="display: flex; gap: 0.5rem; align-items: center;">
+                        <input type="number" name="min_price" value="{{ request.GET.min_price }}" class="form-input"
+                            placeholder="Min" style="padding: 0.5rem;">
+                        <span>-</span>
+                        <input type="number" name="max_price" value="{{ request.GET.max_price }}" class="form-input"
+                            placeholder="Max" style="padding: 0.5rem;">
+                    </div>
+                </div>
+
+                <!-- Amenities -->
+                <div class="filter-group">
+                    <label style="font-weight: 600; display: block; margin-bottom: 0.75rem;">Amenities</label>
+                    <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+                        <label
+                            style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.9rem; cursor: pointer;">
+                            <input type="checkbox" name="has_parking" {% if 'has_parking' in request.GET %}checked{% endif %}> Parking
+                        </label>
+                        <label
+                            style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.9rem; cursor: pointer;">
+                            <input type="checkbox" name="has_lift" {% if 'has_lift' in request.GET %}checked{% endif %}>
+                            Lift
+                        </label>
+                        <label
+                            style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.9rem; cursor: pointer;">
+                            <input type="checkbox" name="has_power_backup" {% if 'has_power_backup' in request.GET %}checked{% endif %}> Power Backup
+                        </label>
+                    </div>
+                </div>
+
+                <div style="display: flex; gap: 0.5rem;">
+                    <button type="submit" class="btn btn-primary" style="flex: 1; padding: 0.5rem;">Apply</button>
+                    <a href="{% url 'properties' %}" class="btn btn-secondary"
+                        style="padding: 0.5rem; display: flex; align-items: center; justify-content: center;"
+                        title="Clear">
+                        <i class="ph ph-trash"></i>
+                    </a>
+                </div>
+            </form>
+
+            <!-- Save This Search (99acres-style alert) -->
+            {% if user.is_authenticated %}
+            <form method="POST" action="{% url 'save_search' %}" style="margin-top:1rem;">
+                {% csrf_token %}
+                <input type="hidden" name="next" value="{% url 'saved_searches' %}">
+                <input type="hidden" name="q" value="{{ request.GET.q }}">
+                <input type="hidden" name="property_type" value="{{ request.GET.type }}">
+                <input type="hidden" name="bhk" value="{{ request.GET.bhk }}">
+                <input type="hidden" name="min_price" value="{{ request.GET.min_price }}">
+                <input type="hidden" name="max_price" value="{{ request.GET.max_price }}">
+                <button type="submit"
+                    style="width:100%; padding:0.6rem; background:#eff6ff; color:#2563eb; border:1.5px solid #bfdbfe; border-radius:10px; font-size:0.85rem; font-weight:600; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:0.4rem;">
+                    <i class="ph-fill ph-bell"></i> Save This Search
+                </button>
+            </form>
+            {% else %}
+            <div style="margin-top:1rem; text-align:center; font-size:0.8rem; color:#94a3b8;">
+                <a href="{% url 'login' %}" style="color:var(--primary-color); font-weight:600;"><i
+                        class="ph ph-bell"></i> Login to Save Search</a>
             </div>
-        </a>
-        {% empty %}
-        <div class="empty-state" style="grid-column: 1 / -1; text-align: center; padding: 4rem 0;">
-            <i class="ph ph-magnifying-glass"
-                style="font-size: 4rem; color: var(--text-muted); margin-bottom: 1rem;"></i>
-            <h3 style="color: var(--text-muted);">No properties match your search criteria.</h3>
-        </div>
-        {% endfor %}
+            {% endif %}
+
+            <!-- Map View Shortcut -->
+            <a href="{% url 'map_view' %}"
+                style="display:flex; align-items:center; gap:0.5rem; margin-top:1rem; padding:0.6rem; background:#f0fdf4; color:#15803d; border:1.5px solid #bbf7d0; border-radius:10px; font-size:0.85rem; font-weight:600; text-decoration:none; justify-content:center;">
+                <i class="ph-fill ph-map-trifold"></i> View on Map
+            </a>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+                <h1 style="font-size: 1.75rem; margin: 0;">{{ page_obj.paginator.count }} Properties Found</h1>
+                <select class="form-input" style="width: auto;"
+                    onchange="location.href='?'+new URLSearchParams(Object.assign(Object.fromEntries(new URLSearchParams(location.search)), {sort: this.value})).toString()">
+                    <option value="newest" {% if request.GET.sort == 'newest' %}selected{% endif %}>Newest First</option>
+                    <option value="price_low" {% if request.GET.sort == 'price_low' %}selected{% endif %}>Price: Low to
+                        High</option>
+                    <option value="price_high" {% if request.GET.sort == 'price_high' %}selected{% endif %}>Price: High to
+                        Low</option>
+                    <option value="popular" {% if request.GET.sort == 'popular' %}selected{% endif %}>Most Viewed</option>
+                </select>
+            </div>
+
+            <div class="property-grid"
+                style="margin-top: 0; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));">
+                {% for property in page_obj %}
+                <div class="property-card" data-id="{{ property.id }}">
+                    <a href="{% url 'property_detail' property.id %}" style="text-decoration:none; color:inherit;">
+                        <div class="property-img">
+                            <div class="property-badge">{{ property.get_status_display }}</div>
+                            {% if property.image %}
+                            <img src="{{ property.image.url }}" alt="{{ property.title }}">
+                            {% else %}
+                            <img src="https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&w=800&q=80"
+                                alt="Placeholder">
+                            {% endif %}
+                        </div>
+                        <div class="property-content">
+                            <div
+                                style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                                <div class="property-price">₹ {{ property.price|intcomma }}</div>
+                                <label
+                                    style="display:flex; align-items:center; gap:0.25rem; font-size:0.75rem; color:var(--text-muted); cursor:pointer;"
+                                    onclick="event.preventDefault(); toggleCompare('{{ property.id }}', '{{ property.title }}')">
+                                    <input type="checkbox" class="compare-check" data-id="{{ property.id }}"
+                                        data-title="{{ property.title }}"> Compare
+                                </label>
+                            </div>
+                            <h3 class="property-title" style="font-size: 1.125rem;">{{ property.title }}</h3>
+                            <div class="property-address"><i class="ph-fill ph-map-pin"></i> {{ property.city }}, {{ property.state }}</div>
+                            <div class="property-features">
+                                <span class="feature"><i class="ph-fill ph-bed"></i> {{ property.bhk }} BHK</span>
+                                <span class="feature"><i class="ph-fill ph-square-logo"></i> {{ property.sqft }}
+                                    sqft</span>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+                {% empty %}
+                <div style="grid-column: 1 / -1; text-align: center; padding: 5rem 0;">
+                    <i class="ph ph-magnifying-glass" style="font-size: 4rem; color: #cbd5e1; margin-bottom: 1rem;"></i>
+                    <h3>No properties match your current filters.</h3>
+                    <a href="{% url 'properties' %}" style="color: var(--primary-color);">Clear all filters</a>
+                </div>
+                {% endfor %}
+            </div>
+
+            {% if page_obj.has_other_pages %}
+            <div class="pagination">
+                {% if page_obj.has_previous %}
+                <a href="?page={{ page_obj.previous_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}"
+                    class="page-link"><i class="ph ph-caret-left"></i></a>
+                {% endif %}
+                <span class="page-link active">{{ page_obj.number }}</span>
+                {% if page_obj.has_next %}
+                <a href="?page={{ page_obj.next_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}"
+                    class="page-link"><i class="ph ph-caret-right"></i></a>
+                {% endif %}
+            </div>
+            {% endif %}
+        </main>
     </div>
-
-    {% if page_obj.has_other_pages %}
-    <div class="pagination">
-        {% if page_obj.has_previous %}
-        <a href="?page={{ page_obj.previous_page_number }}{% if query %}&q={{ query }}{% endif %}" class="page-link"><i
-                class="ph ph-caret-left"></i></a>
-        {% endif %}
-
-        {% for num in page_obj.paginator.page_range %}
-        {% if page_obj.number == num %}
-        <span class="page-link active">{{ num }}</span>
-        {% else %}
-        <a href="?page={{ num }}{% if query %}&q={{ query }}{% endif %}" class="page-link">{{ num }}</a>
-        {% endif %}
-        {% endfor %}
-
-        {% if page_obj.has_next %}
-        <a href="?page={{ page_obj.next_page_number }}{% if query %}&q={{ query }}{% endif %}" class="page-link"><i
-                class="ph ph-caret-right"></i></a>
-        {% endif %}
-    </div>
-    {% endif %}
 </div>
+
+
+<!-- Comparison Bar (Sticky Bottom) -->
+<div id="comparison-bar" style="position: fixed; bottom: 0; left: 0; right: 0; background: white; border-top: 1px solid var(--border-color); box-shadow: 0 -10px 15px -3px rgba(0,0,0,0.1); padding: 1rem; display: none; z-index: 1000; animation: slideUp 0.3s ease-out;">
+    <div class="container" style="display: flex; justify-content: space-between; align-items: center;">
+        <div style="display: flex; align-items: center; gap: 1rem;">
+            <div style="background: var(--primary-color); color: white; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700;" id="compare-count">0</div>
+            <div>
+                <h4 style="margin: 0; font-size: 1rem;">Properties selected for comparison</h4>
+                <p style="margin: 0; font-size: 0.85rem; color: var(--text-muted);" id="compare-titles">None</p>
+            </div>
+        </div>
+        <div style="display: flex; gap: 1rem;">
+            <button onclick="clearComparison()" class="btn btn-secondary" style="padding: 0.5rem 1rem;">Clear All</button>
+            <a href="#" id="compare-link" class="btn btn-primary" style="padding: 0.5rem 1.5rem;">Compare Now</a>
+        </div>
+    </div>
+</div>
+
+<style>
+    @keyframes slideUp {
+        from { transform: translateY(100%); }
+        to { transform: translateY(0); }
+    }
+    .filter-chip.active {
+        background: var(--primary-color);
+        color: white;
+        border-color: var(--primary-color);
+    }
+</style>
+
+<script>
+    // Handle chip-style radio buttons
+    document.querySelectorAll('.filter-chip input').forEach(radio => {
+        radio.addEventListener('change', () => {
+            document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+            radio.parentElement.classList.add('active');
+        });
+    });
+
+    let selectedProperties = JSON.parse(localStorage.getItem('compare_ids')) || [];
+
+    function updateComparisonBar() {
+        const bar = document.getElementById('comparison-bar');
+        const count = document.getElementById('compare-count');
+        const titles = document.getElementById('compare-titles');
+        const link = document.getElementById('compare-link');
+
+        if (selectedProperties.length > 0) {
+            bar.style.display = 'block';
+            count.innerText = selectedProperties.length;
+            
+            // Get titles from checkboxes on the current page for display
+            let titlesList = [];
+            selectedProperties.forEach(id => {
+                const cb = document.querySelector(`.compare-check[data-id="${id}"]`);
+                if (cb) titlesList.push(cb.dataset.title);
+            });
+            
+            if (titlesList.length > 0) {
+                titles.innerText = titlesList.join(', ');
+            } else {
+                titles.innerText = selectedProperties.length + ' active selections';
+            }
+
+            link.href = `{% url 'compare_properties' %}?ids=${selectedProperties.join(',')}`;
+        } else {
+            bar.style.display = 'none';
+        }
+
+        // Sync checkboxes
+        document.querySelectorAll('.compare-check').forEach(cb => {
+            cb.checked = selectedProperties.includes(cb.dataset.id.toString());
+        });
+    }
+
+    window.toggleCompare = function(id, title) {
+        id = id.toString();
+        const index = selectedProperties.indexOf(id);
+        if (index > -1) {
+            selectedProperties.splice(index, 1);
+        } else {
+            if (selectedProperties.length >= 3) {
+                alert('You can compare up to 3 properties at a time.');
+                return;
+            }
+            selectedProperties.push(id);
+        }
+        localStorage.setItem('compare_ids', JSON.stringify(selectedProperties));
+        updateComparisonBar();
+    };
+
+    window.clearComparison = function() {
+        selectedProperties = [];
+        localStorage.setItem('compare_ids', JSON.stringify(selectedProperties));
+        updateComparisonBar();
+    };
+
+    // Initial load
+    document.addEventListener('DOMContentLoaded', updateComparisonBar);
+</script>
+
 {% endblock %}

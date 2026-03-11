@@ -1,0 +1,3 @@
+Loop section SUCCESS
+Pagination section FAILED: Invalid block tag on line 24: 'endblock'. Did you forget to register or load this tag?
+Filter section FAILED: Unclosed tag on line 5: 'if'. Looking for one of: endif.

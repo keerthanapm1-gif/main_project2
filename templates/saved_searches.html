@@ -1,0 +1,229 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Saved Searches – Property Alerts | Luxia{% endblock %}
+
+{% block content %}
+<style>
+    .ss-page {
+        max-width: 900px;
+        margin: 3rem auto;
+        padding: 0 1.5rem;
+    }
+
+    .ss-header {
+        margin-bottom: 2rem;
+    }
+
+    .ss-header h1 {
+        font-size: 1.8rem;
+        font-weight: 800;
+        color: #1e293b;
+        margin-bottom: 0.4rem;
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+    }
+
+    .ss-header p {
+        color: #64748b;
+        font-size: 0.95rem;
+    }
+
+    .ss-card {
+        background: white;
+        border-radius: 16px;
+        border: 1px solid #e2e8f0;
+        padding: 1.4rem 1.8rem;
+        margin-bottom: 1rem;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        flex-wrap: wrap;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        transition: box-shadow 0.2s;
+    }
+
+    .ss-card:hover {
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
+    }
+
+    .ss-card-left {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .ss-card-title {
+        font-weight: 700;
+        font-size: 1rem;
+        color: #1e293b;
+        margin-bottom: 0.5rem;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .ss-tags {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.4rem;
+    }
+
+    .ss-tag {
+        background: #f1f5f9;
+        color: #475569;
+        border-radius: 100px;
+        padding: 0.2rem 0.75rem;
+        font-size: 0.78rem;
+        font-weight: 600;
+    }
+
+    .ss-date {
+        font-size: 0.78rem;
+        color: #94a3b8;
+        margin-top: 0.5rem;
+    }
+
+    .ss-actions {
+        display: flex;
+        gap: 0.7rem;
+        align-items: center;
+        flex-shrink: 0;
+    }
+
+    .btn-search-again {
+        background: linear-gradient(135deg, #e11d48, #f59e0b);
+        color: white;
+        padding: 0.5rem 1.2rem;
+        border-radius: 10px;
+        font-weight: 600;
+        font-size: 0.85rem;
+        text-decoration: none;
+        border: none;
+        cursor: pointer;
+        transition: opacity 0.2s;
+    }
+
+    .btn-search-again:hover {
+        opacity: 0.88;
+    }
+
+    .btn-delete-ss {
+        background: #fee2e2;
+        color: #dc2626;
+        padding: 0.5rem 0.9rem;
+        border-radius: 10px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        border: none;
+        cursor: pointer;
+        transition: background 0.2s;
+    }
+
+    .btn-delete-ss:hover {
+        background: #fecaca;
+    }
+
+    .ss-empty {
+        text-align: center;
+        padding: 5rem 2rem;
+        background: white;
+        border-radius: 20px;
+        border: 1px solid #e2e8f0;
+    }
+
+    .ss-empty i {
+        font-size: 3.5rem;
+        color: #cbd5e1;
+        display: block;
+        margin-bottom: 1rem;
+    }
+
+    .ss-empty h3 {
+        font-size: 1.3rem;
+        color: #475569;
+        font-weight: 700;
+        margin-bottom: 0.5rem;
+    }
+
+    .ss-empty p {
+        color: #94a3b8;
+    }
+
+    .ss-tip-box {
+        background: #eff6ff;
+        border-left: 4px solid #3b82f6;
+        padding: 1rem 1.4rem;
+        border-radius: 0 12px 12px 0;
+        margin-bottom: 2rem;
+        font-size: 0.9rem;
+        color: #1d4ed8;
+        display: flex;
+        align-items: flex-start;
+        gap: 0.75rem;
+    }
+</style>
+
+<div class="ss-page">
+    <div class="ss-header">
+        <h1><i class="ph-fill ph-bell-ringing" style="color:var(--primary-color);"></i> Saved Searches</h1>
+        <p>Your saved property search alerts. Click "Search Again" to re-run any saved search.</p>
+    </div>
+
+    {% if searches %}
+    <div class="ss-tip-box">
+        <i class="ph-fill ph-info" style="font-size:1.2rem;margin-top:0.1rem;"></i>
+        <span>You have <strong>{{ searches|length }} saved search{{ searches|length|pluralize:"es" }}</strong>. Use
+            these as quick shortcuts to find your ideal property.</span>
+    </div>
+
+    {% for s in searches %}
+    <div class="ss-card">
+        <div class="ss-card-left">
+            <div class="ss-card-title">
+                <i class="ph-fill ph-magnifying-glass" style="font-size:0.95rem;color:#94a3b8;"></i>
+                {% if s.query %}{{ s.query }}{% elif s.city %}{{ s.city }}{% else %}Custom Filter Search{% endif %}
+            </div>
+            <div class="ss-tags">
+                {% if s.query %}<span class="ss-tag">🔍 "{{ s.query }}"</span>{% endif %}
+                {% if s.city %}<span class="ss-tag">📍 {{ s.city }}</span>{% endif %}
+                {% if s.property_type %}<span class="ss-tag">🏠 {{ s.property_type|title }}</span>{% endif %}
+                {% if s.bhk %}<span class="ss-tag">🛏 {{ s.bhk }} BHK</span>{% endif %}
+                {% if s.min_price %}<span class="ss-tag">💰 Min ₹{{ s.min_price|floatformat:0 }}</span>{% endif %}
+                {% if s.max_price %}<span class="ss-tag">💰 Max ₹{{ s.max_price|floatformat:0 }}</span>{% endif %}
+            </div>
+            <div class="ss-date">Saved on {{ s.created_at|date:"d M Y, g:i A" }}</div>
+        </div>
+        <div class="ss-actions">
+            <a href="{{ s.get_search_url }}" class="btn-search-again">
+                <i class="ph ph-magnifying-glass"></i> Search Again
+            </a>
+            <form method="POST" style="margin:0;">
+                {% csrf_token %}
+                <input type="hidden" name="delete_id" value="{{ s.id }}">
+                <button type="submit" class="btn-delete-ss" onclick="return confirm('Delete this saved search?')">
+                    <i class="ph ph-trash"></i>
+                </button>
+            </form>
+        </div>
+    </div>
+    {% endfor %}
+
+    {% else %}
+    <div class="ss-empty">
+        <i class="ph-fill ph-bell-slash"></i>
+        <h3>No Saved Searches Yet</h3>
+        <p>Go to the <a href="{% url 'properties' %}" style="color:var(--primary-color);font-weight:600;">Properties
+                Page</a>, set your filters, and click <strong>"Save This Search"</strong> to create your first alert.
+        </p>
+    </div>
+    {% endif %}
+
+    <div style="text-align:center; margin-top:2.5rem;">
+        <a href="{% url 'properties' %}" style="color:var(--primary-color);font-weight:600;text-decoration:none;">
+            <i class="ph ph-arrow-left"></i> Back to Properties
+        </a>
+    </div>
+</div>
+{% endblock %}

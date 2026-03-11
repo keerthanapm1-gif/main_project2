@@ -5,12 +5,28 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import AuthenticationForm
 from django.contrib import messages
 from django.core.paginator import Paginator
-from .models import Property, Wishlist, PropertyReview, Inquiry
+from django.db.models import Q, Count, Avg
+from .models import Property, Wishlist, PropertyReview, Inquiry, Lease, PaymentSplit, TaxReport, SavedSearch
 from .forms import UserRegistrationForm, PropertyReviewForm, InquiryForm
 
 def home(request):
     latest_properties = Property.objects.order_by('-created_at')[:6]
-    return render(request, 'home.html', {'properties': latest_properties})
+    total_properties = Property.objects.count()
+    # City stats for popular cities section
+    city_stats = Property.objects.values('city').annotate(count=Count('id')).order_by('-count')[:8]
+    for_sale_count = Property.objects.filter(status='available').count()
+    rented_count = Property.objects.filter(status='rented').count()
+    # Trending: top 4 most viewed properties
+    trending_properties = Property.objects.order_by('-view_count')[:4]
+    context = {
+        'properties': latest_properties,
+        'total_properties': total_properties,
+        'city_stats': city_stats,
+        'for_sale_count': for_sale_count,
+        'rented_count': rented_count,
+        'trending_properties': trending_properties,
+    }
+    return render(request, 'home.html', context)
 
 def properties_list(request):
     property_list = Property.objects.all().order_by('-created_at')
@@ -51,6 +67,15 @@ def properties_list(request):
         property_list = property_list.filter(has_power_backup=True)
     if 'free_vehicle_facility' in request.GET:
         property_list = property_list.filter(free_vehicle_facility=True)
+
+    # 5. New Field Filters
+    furnished = request.GET.get('furnished')
+    if furnished:
+        property_list = property_list.filter(furnished_status=furnished)
+        
+    facing = request.GET.get('facing')
+    if facing:
+        property_list = property_list.filter(facing=facing)
 
     # 5. Sorting
     sort_by = request.GET.get('sort')
@@ -213,7 +238,8 @@ def contact_seller(request, property_id):
             messages.error(request, 'Please correct the errors in the form.')
     return redirect('property_detail', pk=property_id)
 
-from django.db.models import Q
+
+import json
 from .models import ChatMessage
 from django.contrib.auth.models import User
 
@@ -321,6 +347,22 @@ def video_call_room(request, room_name):
         'user_email': request.user.email,
     }
     return render(request, 'video_call.html', context)
+
+@login_required
+def video_call_property(request, property_id):
+    prop = get_object_or_404(Property, id=property_id)
+    from django.contrib.auth.models import User
+    seller_user = User.objects.filter(email=prop.seller_email).first()
+    
+    if not seller_user or seller_user == request.user:
+        messages.error(request, "Cannot initiate video call with this seller.")
+        return redirect('property_detail', pk=property_id)
+        
+    min_id = min(request.user.id, seller_user.id)
+    max_id = max(request.user.id, seller_user.id)
+    room_name = f"{min_id}_{max_id}"
+    
+    return redirect('video_call_room', room_name=room_name)
 
 def chatbot_api(request):
     if request.method == 'POST':
@@ -440,3 +482,268 @@ def api_estimate_price(request):
         })
         
     return JsonResponse({'error': 'Invalid request method'}, status=405)
+
+@login_required
+def lease_generation(request, property_id):
+    prop = get_object_or_404(Property, pk=property_id)
+    
+    from datetime import date, timedelta
+    today = date.today()
+    next_year = today.replace(year=today.year + 1)
+    
+    lease, created = Lease.objects.get_or_create(
+        property=prop,
+        tenant=request.user,
+        defaults={
+            'start_date': today,
+            'end_date': next_year,
+            'rent_amount': prop.price,
+            'deposit_amount': prop.price * 2, # Example 2 months rent
+            'clauses': '1. Standard strict adherence to local real estate tenancy laws.\n2. Tenant must notify landlord 30 days before vacating.\n3. Automatic rent collection enabled via escrow.'
+        }
+    )
+    
+    if request.method == 'POST':
+        action = request.POST.get('action')
+        if action == 'sign':
+            lease.is_signed = True
+            lease.save()
+            messages.success(request, 'Lease digitally signed successfully.')
+            return redirect('lease_generation', property_id=property_id)
+            
+    return render(request, 'lease_generation.html', {'property': prop, 'lease': lease})
+
+@login_required
+def payment_splitter(request, property_id):
+    prop = get_object_or_404(Property, pk=property_id)
+    leases = Lease.objects.filter(property=prop)
+    payments = PaymentSplit.objects.filter(lease__in=leases).order_by('-payment_date')
+    
+    if request.method == 'POST':
+        lease_id = request.POST.get('lease_id')
+        amount = request.POST.get('amount')
+        is_deposit = request.POST.get('is_deposit') == 'true'
+        
+        if lease_id and amount:
+            lease = get_object_or_404(Lease, pk=lease_id)
+            PaymentSplit.objects.create(
+                lease=lease,
+                amount_paid=amount,
+                is_deposit=is_deposit
+            )
+            messages.success(request, 'Payment successfully processed and routed via Escrow Splitter.')
+            return redirect('payment_splitter', property_id=property_id)
+            
+    return render(request, 'payment_splitter.html', {'property': prop, 'leases': leases, 'payments': payments})
+
+@login_required
+def tax_compliance(request):
+    reports = TaxReport.objects.filter(user=request.user).order_by('-year', '-generated_at')
+    
+    if request.method == 'POST':
+        report_type = request.POST.get('report_type')
+        year = request.POST.get('year')
+        
+        if report_type and year:
+            TaxReport.objects.create(
+                user=request.user,
+                year=year,
+                report_type=report_type
+            )
+            messages.success(request, f'Successfully auto-generated {report_type} compliant forms for {year}.')
+            return redirect('tax_compliance')
+            
+    return render(request, 'tax_compliance.html', {'reports': reports})
+
+# ─── EMI Calculator ────────────────────────────────────────────
+def emi_calculator(request):
+    return render(request, 'emi_calculator.html')
+
+# ─── Property Comparison ───────────────────────────────────────
+def compare_properties(request):
+    ids_param = request.GET.get('ids', '')
+    ids = [i.strip() for i in ids_param.split(',') if i.strip().isdigit()]
+    properties = Property.objects.filter(pk__in=ids[:3])  # Max 3
+    return render(request, 'compare.html', {'properties': properties})
+
+# ─── Post a Property ───────────────────────────────────────────
+@login_required
+def post_property(request):
+    if request.method == 'POST':
+        try:
+            prop = Property(
+                title=request.POST.get('title'),
+                description=request.POST.get('description'),
+                property_type=request.POST.get('property_type', 'apartment'),
+                status=request.POST.get('status', 'available'),
+                price=request.POST.get('price'),
+                bhk=request.POST.get('bhk', 2),
+                sqft=request.POST.get('sqft'),
+                address=request.POST.get('address'),
+                city=request.POST.get('city'),
+                state=request.POST.get('state'),
+                pincode=request.POST.get('pincode'),
+                seller_name=request.user.get_full_name() or request.user.username,
+                seller_phone=request.POST.get('seller_phone', ''),
+                seller_email=request.user.email,
+                survey_number=request.POST.get('survey_number', ''),
+                has_parking='has_parking' in request.POST,
+                has_lift='has_lift' in request.POST,
+                has_power_backup='has_power_backup' in request.POST,
+                free_vehicle_facility='free_vehicle_facility' in request.POST,
+                offers=request.POST.get('offers', ''),
+            )
+            if 'image' in request.FILES:
+                prop.image = request.FILES['image']
+            prop.save()
+            messages.success(request, 'Your property has been listed successfully!')
+            return redirect('property_detail', pk=prop.pk)
+        except Exception as e:
+            messages.error(request, f'Error listing property: {e}')
+    return render(request, 'post_property.html')
+
+
+# ─── Map View ───────────────────────────────────────────────────
+def map_view(request):
+    """Render an interactive Leaflet map with all properties that have coordinates."""
+    all_properties = Property.objects.all()
+    properties_json = []
+    for p in all_properties:
+        lat = float(p.latitude) if p.latitude else None
+        lng = float(p.longitude) if p.longitude else None
+        if lat is None or lng is None:
+            continue
+        properties_json.append({
+            'id': p.id,
+            'title': p.title,
+            'city': p.city,
+            'price': float(p.price),
+            'bhk': p.bhk,
+            'sqft': p.sqft,
+            'property_type': p.get_property_type_display(),
+            'status': p.get_status_display(),
+            'lat': lat,
+            'lng': lng,
+            'image_url': p.image.url if p.image else '',
+        })
+    import json as _json
+    context = {
+        'properties_json': _json.dumps(properties_json),
+        'total_on_map': len(properties_json),
+        'total_properties': all_properties.count(),
+    }
+    return render(request, 'map_view.html', context)
+
+
+# ─── Seller Profile ─────────────────────────────────────────────
+def seller_profile(request, seller_email):
+    """Show all properties listed by a specific seller."""
+    listings = Property.objects.filter(seller_email__iexact=seller_email).order_by('-created_at')
+    if not listings.exists():
+        messages.error(request, 'No listings found for this seller.')
+        return redirect('home')
+    seller_name = listings.first().seller_name
+    seller_phone = listings.first().seller_phone
+    avg_price = listings.aggregate(Avg('price'))['price__avg']
+    context = {
+        'seller_email': seller_email,
+        'seller_name': seller_name,
+        'seller_phone': seller_phone,
+        'listings': listings,
+        'total_listings': listings.count(),
+        'avg_price': avg_price,
+    }
+    return render(request, 'seller_profile.html', context)
+
+
+# ─── Save Search / Property Alerts ──────────────────────────────
+@login_required
+def save_search(request):
+    """Save current search filters as a saved search for the user."""
+    if request.method == 'POST':
+        q = request.POST.get('q', '').strip()
+        city = request.POST.get('city', '').strip()
+        property_type = request.POST.get('property_type', '').strip()
+        bhk = request.POST.get('bhk', None)
+        min_price = request.POST.get('min_price', None)
+        max_price = request.POST.get('max_price', None)
+
+        if bhk and not bhk.isdigit():
+            bhk = None
+        if min_price and not min_price.replace('.', '', 1).isdigit():
+            min_price = None
+        if max_price and not max_price.replace('.', '', 1).isdigit():
+            max_price = None
+
+        SavedSearch.objects.create(
+            user=request.user,
+            query=q or None,
+            city=city or None,
+            property_type=property_type or None,
+            bhk=bhk or None,
+            min_price=min_price or None,
+            max_price=max_price or None,
+        )
+        messages.success(request, '✅ Search saved! You can access it from your Saved Searches.')
+    return redirect(request.POST.get('next', 'saved_searches'))
+
+
+@login_required
+def saved_searches(request):
+    """Show the user's list of saved search alerts."""
+    if request.method == 'POST' and request.POST.get('delete_id'):
+        delete_id = request.POST.get('delete_id')
+        SavedSearch.objects.filter(pk=delete_id, user=request.user).delete()
+        messages.success(request, 'Saved search deleted.')
+        return redirect('saved_searches')
+
+    searches = SavedSearch.objects.filter(user=request.user).order_by('-created_at')
+    return render(request, 'saved_searches.html', {'searches': searches})
+
+
+# ─── Loan Eligibility Calculator ────────────────────────────────
+def loan_eligibility(request):
+    """Render the home loan eligibility calculator."""
+    result = None
+    if request.method == 'POST':
+        try:
+            monthly_salary = float(request.POST.get('monthly_salary', 0))
+            tenure_years = int(request.POST.get('tenure_years', 20))
+            interest_rate = float(request.POST.get('interest_rate', 8.5))
+            down_payment_pct = float(request.POST.get('down_payment_pct', 20))
+
+            # Max EMI banks allow = 40-50% of net monthly income
+            max_emi = monthly_salary * 0.45
+
+            # Calculate max loan using EMI formula: P = EMI * [(1+r)^n - 1] / [r * (1+r)^n]
+            r = interest_rate / 12 / 100  # monthly rate
+            n = tenure_years * 12  # months
+            if r > 0:
+                max_loan = max_emi * ((1 + r) ** n - 1) / (r * (1 + r) ** n)
+            else:
+                max_loan = max_emi * n
+
+            # Total property value they can afford (loan + down payment)
+            down_payment_decimal = down_payment_pct / 100
+            affordable_property = max_loan / (1 - down_payment_decimal) if down_payment_pct < 100 else max_loan
+
+            # Actual EMI for max loan
+            if r > 0:
+                emi = max_loan * r * (1 + r) ** n / ((1 + r) ** n - 1)
+            else:
+                emi = max_loan / n
+
+            result = {
+                'max_loan': round(max_loan),
+                'max_emi': round(max_emi),
+                'actual_emi': round(emi),
+                'affordable_property': round(affordable_property),
+                'down_payment': round(affordable_property * down_payment_decimal),
+                'tenure_years': tenure_years,
+                'interest_rate': interest_rate,
+            }
+        except Exception as e:
+            messages.error(request, f'Calculation error: {e}')
+
+    return render(request, 'loan_eligibility.html', {'result': result})
+

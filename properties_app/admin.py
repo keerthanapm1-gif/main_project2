@@ -30,7 +30,7 @@ class InquiryInline(admin.TabularInline):
 
 @admin.register(Property)
 class PropertyAdmin(admin.ModelAdmin):
-    list_display = ('title', 'property_type', 'status', 'city', 'price', 'bhk', 'sqft', 'seller_name')
+    list_display = ('title', 'property_type', 'status', 'city', 'price', 'bhk', 'sqft', 'survey_number', 'seller_name')
     list_filter = ('property_type', 'status', 'city', 'bhk', 'state')
     search_fields = ('title', 'address', 'city', 'survey_number')
     inlines = [FacilityInline, PropertyImageInline, PropertyVideoInline, PriceHistoryInline, PropertyReviewInline, InquiryInline]

@@ -23,9 +23,16 @@
         <div class="nav-links">
             <a href="{% url 'home' %}">Home</a>
             <a href="{% url 'properties' %}">Properties</a>
-            <a href="{% url 'about' %}">About</a>
-            <a href="{% url 'price_estimator' %}">Price Predictor</a>
+            <a href="{% url 'map_view' %}"><i class="ph ph-map-trifold"></i> Map View</a>
+            <a href="{% url 'emi_calculator' %}">EMI Calc</a>
+            <a href="{% url 'loan_eligibility' %}">Loan Check</a>
+            <a href="{% url 'price_estimator' %}">Price AI</a>
             {% if user.is_authenticated %}
+            <a href="{% url 'saved_searches' %}"><i class="ph ph-bell"></i> Alerts</a>
+            <a href="{% url 'tax_compliance' %}">Tax</a>
+            <a href="{% url 'post_property' %}" class="btn btn-primary"
+                style="padding: 0.5rem 1rem; background: linear-gradient(135deg, #FF3366, #FF9933); border: none;">Post
+                Property FREE</a>
             <span style="color: var(--text-muted);">Hello, {{ user.username }}!</span>
             <a href="{% url 'logout' %}" class="btn btn-secondary" style="padding: 0.5rem 1rem;">Logout</a>
             {% else %}

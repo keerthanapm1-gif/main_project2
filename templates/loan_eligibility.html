@@ -1,0 +1,362 @@
+﻿{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Home Loan Eligibility Calculator â€“ Luxia Real Estate{% endblock %}
+
+{% block content %}
+<style>
+    .loan-page {
+        max-width: 900px;
+        margin: 3rem auto;
+        padding: 0 1.5rem;
+    }
+
+    .loan-hero {
+        background: linear-gradient(135deg, #0f172a, #1e3a5f);
+        border-radius: 24px;
+        padding: 3rem 2.5rem;
+        color: white;
+        text-align: center;
+        margin-bottom: 2.5rem;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+    }
+
+    .loan-hero h1 {
+        font-size: 2.2rem;
+        font-weight: 800;
+        margin-bottom: 0.5rem;
+    }
+
+    .loan-hero p {
+        color: #94a3b8;
+        font-size: 1rem;
+    }
+
+    .loan-form-card {
+        background: white;
+        border-radius: 20px;
+        border: 1px solid #e2e8f0;
+        padding: 2.5rem;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.07);
+        margin-bottom: 2rem;
+    }
+
+    .loan-form-card h2 {
+        font-size: 1.3rem;
+        font-weight: 700;
+        color: #1e293b;
+        margin-bottom: 1.8rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .form-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1.5rem;
+    }
+
+    @media (max-width: 580px) {
+        .form-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    .form-group {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .form-group label {
+        font-weight: 600;
+        color: #374151;
+        font-size: 0.9rem;
+    }
+
+    .form-group input,
+    .form-group select {
+        padding: 0.8rem 1rem;
+        border: 1.5px solid #e2e8f0;
+        border-radius: 10px;
+        font-size: 0.95rem;
+        color: #1e293b;
+        outline: none;
+        transition: border-color 0.2s;
+        background: #f8fafc;
+    }
+
+    .form-group input:focus,
+    .form-group select:focus {
+        border-color: var(--primary-color, #e11d48);
+        background: white;
+    }
+
+    .input-prefix {
+        position: relative;
+    }
+
+    .input-prefix span {
+        position: absolute;
+        left: 12px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #64748b;
+        font-weight: 600;
+        font-size: 0.9rem;
+        pointer-events: none;
+    }
+
+    .input-prefix input {
+        padding-left: 2rem;
+    }
+
+    .form-hint {
+        font-size: 0.78rem;
+        color: #94a3b8;
+        margin-top: 0.25rem;
+    }
+
+    .btn-calculate {
+        width: 100%;
+        padding: 1rem;
+        background: linear-gradient(135deg, #e11d48, #f59e0b);
+        color: white;
+        border: none;
+        border-radius: 14px;
+        font-size: 1.05rem;
+        font-weight: 700;
+        cursor: pointer;
+        margin-top: 1.5rem;
+        transition: opacity 0.2s, transform 0.15s;
+        box-shadow: 0 4px 16px rgba(225, 29, 72, 0.3);
+    }
+
+    .btn-calculate:hover {
+        opacity: 0.9;
+        transform: translateY(-2px);
+    }
+
+    /* Results */
+    .result-hero {
+        background: linear-gradient(135deg, #e11d48, #f59e0b);
+        border-radius: 20px;
+        padding: 2.5rem;
+        color: white;
+        text-align: center;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 6px 24px rgba(225, 29, 72, 0.25);
+        animation: fadeInUp 0.4s ease;
+    }
+
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .result-hero .main-amount {
+        font-size: 3rem;
+        font-weight: 900;
+        display: block;
+        letter-spacing: -1px;
+    }
+
+    .result-hero .main-label {
+        font-size: 1rem;
+        opacity: 0.85;
+        margin-top: 0.25rem;
+    }
+
+    .result-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .result-box {
+        background: white;
+        border-radius: 14px;
+        border: 1px solid #e2e8f0;
+        padding: 1.4rem 1.2rem;
+        text-align: center;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    }
+
+    .result-box .r-amount {
+        font-size: 1.5rem;
+        font-weight: 800;
+        color: #1e293b;
+    }
+
+    .result-box .r-label {
+        font-size: 0.8rem;
+        color: #64748b;
+        margin-top: 0.3rem;
+    }
+
+    .result-box .r-icon {
+        font-size: 1.6rem;
+        display: block;
+        margin-bottom: 0.5rem;
+    }
+
+    .eligibility-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        background: #dcfce7;
+        color: #166534;
+        border: 1.5px solid #86efac;
+        border-radius: 100px;
+        padding: 0.4rem 1.2rem;
+        font-size: 0.85rem;
+        font-weight: 700;
+        margin-top: 1rem;
+    }
+
+    .tips-box {
+        background: #fffbeb;
+        border-left: 4px solid #f59e0b;
+        border-radius: 0 12px 12px 0;
+        padding: 1.2rem 1.5rem;
+        font-size: 0.88rem;
+        color: #78350f;
+    }
+
+    .tips-box h4 {
+        font-weight: 700;
+        margin-bottom: 0.5rem;
+        font-size: 0.95rem;
+    }
+
+    .tips-box ul {
+        padding-left: 1.2rem;
+    }
+
+    .tips-box ul li {
+        margin-bottom: 0.3rem;
+    }
+</style>
+
+<div class="loan-page">
+    <div class="loan-hero">
+        <h1>ðŸ¦ Home Loan Eligibility</h1>
+        <p>Check how much home loan you are eligible for based on your income</p>
+    </div>
+
+    {% if result %}
+    <div class="result-hero">
+        <div class="main-amount">â‚¹ {{ result.max_loan|floatformat:0 }}</div>
+        <div class="main-label">Maximum Loan Amount You're Eligible For</div>
+        <div class="eligibility-badge">
+            <i class="ph-fill ph-check-circle"></i> Eligible for Home Loan
+        </div>
+    </div>
+
+    <div class="result-grid">
+        <div class="result-box">
+            <span class="r-icon">ðŸ </span>
+            <div class="r-amount">â‚¹ {{ result.affordable_property|floatformat:0 }}</div>
+            <div class="r-label">Affordable Property Value</div>
+        </div>
+        <div class="result-box">
+            <span class="r-icon">ðŸ’µ</span>
+            <div class="r-amount">â‚¹ {{ result.actual_emi|floatformat:0 }}</div>
+            <div class="r-label">Estimated Monthly EMI</div>
+        </div>
+        <div class="result-box">
+            <span class="r-icon">ðŸ’°</span>
+            <div class="r-amount">â‚¹ {{ result.down_payment|floatformat:0 }}</div>
+            <div class="r-label">Down Payment Required</div>
+        </div>
+        <div class="result-box">
+            <span class="r-icon">ðŸ“…</span>
+            <div class="r-amount">{{ result.tenure_years }} yrs</div>
+            <div class="r-label">Loan Tenure at {{ result.interest_rate }}% p.a.</div>
+        </div>
+    </div>
+
+    <div class="tips-box" style="margin-bottom:2rem;">
+        <h4>ðŸ’¡ Tips to Increase Your Eligibility</h4>
+        <ul>
+            <li>Add a co-applicant (spouse/parent) to nearly double your loan cap</li>
+            <li>Clear existing loans or credit card dues before applying</li>
+            <li>A CIBIL score above 750 fetches the best interest rates</li>
+            <li>Consider longer tenor (up to 30 yrs) to reduce EMI burden</li>
+        </ul>
+    </div>
+
+    <div style="text-align:center;margin-bottom:2rem;">
+        <a href="{% url 'properties' %}"
+            style="background:linear-gradient(135deg,#e11d48,#f59e0b);color:white;padding:0.8rem 2rem;border-radius:14px;font-weight:700;text-decoration:none;">
+            Browse Properties Within Your Budget â†’
+        </a>
+    </div>
+    {% endif %}
+
+    <div class="loan-form-card">
+        <h2><i class="ph-fill ph-calculator" style="color:var(--primary-color);"></i> Calculate Your Eligibility</h2>
+        <form method="POST" id="loan-form">
+            {% csrf_token %}
+            <div class="form-grid">
+                <div class="form-group">
+                    <label for="monthly_salary">Net Monthly Salary</label>
+                    <div class="input-prefix">
+                        <span>â‚¹</span>
+                        <input type="number" id="monthly_salary" name="monthly_salary" min="5000" step="1000"
+                            value="{{ request.POST.monthly_salary|default:'' }}" placeholder="e.g. 50000" required>
+                    </div>
+                    <span class="form-hint">Your take-home salary after tax</span>
+                </div>
+                <div class="form-group">
+                    <label for="tenure_years">Loan Tenure (Years)</label>
+                    <select id="tenure_years" name="tenure_years">
+                        <option value="5" {% if request.POST.tenure_years == "5" %}selected{% endif %}>5 Years</option>
+                        <option value="10" {% if request.POST.tenure_years == "10" %}selected{% endif %}>10 Years</option>
+                        <option value="15" {% if request.POST.tenure_years == "15" %}selected{% endif %}>15 Years</option>
+                        <option value="20" {% if not request.POST.tenure_years or request.POST.tenure_years == "20" %}selected{% endif %}>20 Years (Popular)</option>
+                        <option value="25" {% if request.POST.tenure_years == "25" %}selected{% endif %}>25 Years</option>
+                        <option value="30" {% if request.POST.tenure_years == "30" %}selected{% endif %}>30 Years</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="interest_rate">Annual Interest Rate (%)</label>
+                    <input type="number" id="interest_rate" name="interest_rate" step="0.1" min="5" max="20"
+                        value="{{ request.POST.interest_rate|default:'8.5' }}" placeholder="e.g. 8.5" required>
+                    <span class="form-hint">Current average SBI rate: ~8.5%</span>
+                </div>
+                <div class="form-group">
+                    <label for="down_payment_pct">Down Payment (%)</label>
+                    <select id="down_payment_pct" name="down_payment_pct">
+                        <option value="10" {% if request.POST.down_payment_pct == "10" %}selected{% endif %}>10%</option>
+                        <option value="20" {% if request.POST.down_payment_pct == "20" or not request.POST.down_payment_pct %}selected{% endif %}>20% (Recommended)</option>
+                        <option value="25" {% if request.POST.down_payment_pct == "25" %}selected{% endif %}>25%</option>
+                        <option value="30" {% if request.POST.down_payment_pct == "30" %}selected{% endif %}>30%</option>
+                    </select>
+                </div>
+            </div>
+            <button type="submit" class="btn-calculate">
+                <i class="ph ph-calculator"></i> Check Eligibility
+            </button>
+        </form>
+    </div>
+
+    <div class="tips-box">
+        <h4>â„¹ï¸ How This Calculator Works</h4>
+        <ul>
+            <li>Banks typically allow up to <strong>45% of your net salary</strong> as maximum EMI</li>
+            <li>Loan amount is calculated using the standard EMI amortization formula</li>
+            <li>Actual eligibility may vary by bank, credit score, and other liabilities</li>
+        </ul>
+    </div>
+</div>
+{% endblock %}

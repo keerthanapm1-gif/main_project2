@@ -1,0 +1,148 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Post Property FREE | Luxia Real Estate{% endblock %}
+
+{% block content %}
+<div class="container" style="max-width: 800px; margin-top: 3rem;">
+    <div style="text-align: center; margin-bottom: 3rem;">
+        <h1 style="font-size: 2.5rem; margin-bottom: 0.5rem;">Sell or Rent your Property For Free</h1>
+        <p style="color: var(--text-muted);">Reach thousands of buyers & tenants instantly.</p>
+    </div>
+
+    <div class="form-container" style="max-width: 100%; padding: 3rem;">
+        <form method="POST" enctype="multipart/form-data">
+            {% csrf_token %}
+
+            <!-- Step 1: Basic Info -->
+            <div class="form-step" id="step-1">
+                <h3 style="margin-bottom: 1.5rem; border-bottom: 1px solid var(--border-color); padding-bottom: 10px;">
+                    Step 1: Property Basics</h3>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+                    <div class="form-group">
+                        <label>Property Title</label>
+                        <input type="text" name="title" class="form-input"
+                            placeholder="e.g. Luxury 3BHK Apartment in Worli" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Property Type</label>
+                        <select name="property_type" class="form-input">
+                            <option value="apartment">Apartment</option>
+                            <option value="house">Villa/House</option>
+                            <option value="plot">Plot</option>
+                            <option value="commercial">Commercial</option>
+                            <option value="pg">PG/Co-living</option>
+                        </select>
+                    </div>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+                    <div class="form-group">
+                        <label>List for</label>
+                        <select name="status" class="form-input">
+                            <option value="available">Sale</option>
+                            <option value="rented">Rent</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Price (₹)</label>
+                        <input type="number" name="price" class="form-input" placeholder="Total Price or Monthly Rent"
+                            required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Description</label>
+                    <textarea name="description" class="form-input" rows="4"
+                        placeholder="Describe the key features, neighborhood, etc." required></textarea>
+                </div>
+            </div>
+
+            <!-- Step 2: Location & Size -->
+            <div class="form-step" id="step-2" style="margin-top: 3rem;">
+                <h3 style="margin-bottom: 1.5rem; border-bottom: 1px solid var(--border-color); padding-bottom: 10px;">
+                    Step 2: Location & Size</h3>
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem;">
+                    <div class="form-group">
+                        <label>BHK</label>
+                        <select name="bhk" class="form-input">
+                            <option value="1">1 BHK</option>
+                            <option value="2" selected>2 BHK</option>
+                            <option value="3">3 BHK</option>
+                            <option value="4">4+ BHK</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Area (Sq.Ft.)</label>
+                        <input type="number" name="sqft" class="form-input" placeholder="Total Area" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Survey/Plot No.</label>
+                        <input type="text" name="survey_number" class="form-input" placeholder="Survey Number">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Full Address</label>
+                    <input type="text" name="address" class="form-input" required>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem;">
+                    <div class="form-group">
+                        <label>City</label>
+                        <input type="text" name="city" class="form-input" required>
+                    </div>
+                    <div class="form-group">
+                        <label>State</label>
+                        <input type="text" name="state" class="form-input" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Pincode</label>
+                        <input type="text" name="pincode" class="form-input" required>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 3: Amenities & Images -->
+            <div class="form-step" id="step-3" style="margin-top: 3rem;">
+                <h3 style="margin-bottom: 1.5rem; border-bottom: 1px solid var(--border-color); padding-bottom: 10px;">
+                    Step 3: Amenities & Photos</h3>
+                <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; margin-bottom: 1.5rem;">
+                    <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                        <input type="checkbox" name="has_parking"> Parking Available
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                        <input type="checkbox" name="has_lift"> Lift Available
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                        <input type="checkbox" name="has_power_backup"> Power Backup
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                        <input type="checkbox" name="free_vehicle_facility"> Free Site Visit Vehicle
+                    </label>
+                </div>
+
+                <div class="form-group">
+                    <label>Major Image (Thumbnail)</label>
+                    <input type="file" name="image" class="form-input" accept="image/*" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Seller Contact Phone</label>
+                    <input type="text" name="seller_phone" class="form-input" placeholder="e.g. +91 9876543210"
+                        required>
+                </div>
+
+                <div class="form-group">
+                    <label>Any Special Offers?</label>
+                    <input type="text" name="offers" class="form-input"
+                        placeholder="e.g. No brokerage, 1 month rent free">
+                </div>
+            </div>
+
+            <div style="margin-top: 3rem; display: flex; justify-content: center;">
+                <button type="submit" class="btn btn-primary"
+                    style="padding: 1rem 4rem; font-size: 1.1rem; background: linear-gradient(135deg, #FF3366, #FF9933); border: none;">
+                    List My Property Now
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

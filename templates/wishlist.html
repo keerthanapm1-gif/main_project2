@@ -39,12 +39,16 @@
                     <a href="{% url 'property_detail' item.property.pk %}"
                         style="color: var(--text-color); text-decoration: none;">{{ item.property.title }}</a>
                 </h3>
-                <p style="color: var(--text-muted); margin-bottom: 1rem;"><i class="ph ph-map-pin"></i> {{
-                    item.property.city }}, {{ item.property.state }}</p>
+                <p style="color: var(--text-muted); margin-bottom: 1rem;"><i class="ph ph-map-pin"></i> {{ item.property.city }}, {{ item.property.state }}</p>
                 <div style="display: flex; gap: 1rem; color: var(--text-muted); font-size: 0.875rem;">
                     <span><i class="ph ph-bed"></i> {{ item.property.bhk }} Beds</span>
                     <span><i class="ph ph-square-logo"></i> {{ item.property.sqft }} sqft</span>
                 </div>
+                {% if item.property.survey_number %}
+                <div style="margin-top: 0.75rem; font-size: 0.8rem; color: var(--text-muted);">
+                    <i class="ph ph-hash"></i> Survey No: {{ item.property.survey_number }}
+                </div>
+                {% endif %}
             </div>
         </div>
         {% endfor %}

@@ -1,0 +1,29 @@
+PUSH: block (Stack: 1) - Full tag: block title
+POP: endblock (Stack: 0)
+PUSH: block (Stack: 1) - Full tag: block content
+PUSH: if (Stack: 2) - Full tag: if query
+PUSH: if (Stack: 3) - Full tag: if query
+POP: endif (Stack: 2)
+PUSH: for (Stack: 3) - Full tag: for property in page_obj
+PUSH: if (Stack: 4) - Full tag: if property.image
+POP: endif (Stack: 3)
+PUSH: if (Stack: 4) - Full tag: if user.is_authenticated and user.email != property.seller_email
+POP: endif (Stack: 3)
+POP: endfor (Stack: 2)
+PUSH: if (Stack: 3) - Full tag: if page_obj.has_other_pages
+PUSH: if (Stack: 4) - Full tag: if page_obj.has_previous
+PUSH: if (Stack: 5) - Full tag: if query
+POP: endif (Stack: 4)
+POP: endif (Stack: 3)
+PUSH: for (Stack: 4) - Full tag: for num in page_obj.paginator.page_range
+PUSH: if (Stack: 5) - Full tag: if page_obj.number == num
+PUSH: if (Stack: 6) - Full tag: if query
+POP: endif (Stack: 5)
+POP: endif (Stack: 4)
+POP: endfor (Stack: 3)
+PUSH: if (Stack: 4) - Full tag: if page_obj.has_next
+PUSH: if (Stack: 5) - Full tag: if query
+POP: endif (Stack: 4)
+POP: endif (Stack: 3)
+POP: endif (Stack: 2)
+ERROR: Found endblock but stack is ['block', 'if']

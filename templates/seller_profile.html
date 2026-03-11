@@ -1,0 +1,252 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ seller_name }} – Seller Profile | Luxia Real Estate{% endblock %}
+
+{% block content %}
+<style>
+    .seller-hero {
+        background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 100%);
+        padding: 4rem 2rem;
+        color: white;
+        text-align: center;
+    }
+
+    .seller-avatar {
+        width: 90px;
+        height: 90px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, var(--primary-color, #e11d48), #f59e0b);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2.5rem;
+        font-weight: 800;
+        color: white;
+        margin: 0 auto 1.2rem;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+        border: 4px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .seller-hero h1 {
+        font-size: 2rem;
+        font-weight: 800;
+        margin-bottom: 0.3rem;
+    }
+
+    .seller-hero .seller-contact {
+        color: #94a3b8;
+        font-size: 0.95rem;
+        margin-top: 0.5rem;
+    }
+
+    .seller-stats-row {
+        display: flex;
+        gap: 2rem;
+        justify-content: center;
+        margin-top: 2rem;
+        flex-wrap: wrap;
+    }
+
+    .seller-stat-box {
+        background: rgba(255, 255, 255, 0.08);
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        border-radius: 14px;
+        padding: 1.2rem 2rem;
+        min-width: 130px;
+        text-align: center;
+    }
+
+    .seller-stat-box .num {
+        font-size: 1.8rem;
+        font-weight: 800;
+        color: #f59e0b;
+        display: block;
+    }
+
+    .seller-stat-box .label {
+        font-size: 0.8rem;
+        color: #94a3b8;
+        margin-top: 0.25rem;
+        display: block;
+    }
+
+    .seller-listings-section {
+        max-width: 1200px;
+        margin: 3rem auto;
+        padding: 0 1.5rem;
+    }
+
+    .seller-listings-section h2 {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #1e293b;
+        margin-bottom: 1.5rem;
+        padding-bottom: 0.75rem;
+        border-bottom: 2px solid #e2e8f0;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .seller-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
+        gap: 1.5rem;
+    }
+
+    .seller-card {
+        background: white;
+        border-radius: 16px;
+        box-shadow: 0 2px 12px rgba(0, 0, 0, 0.07);
+        border: 1px solid #e2e8f0;
+        overflow: hidden;
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .seller-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+    }
+
+    .seller-card-img {
+        height: 180px;
+        overflow: hidden;
+        position: relative;
+    }
+
+    .seller-card-img img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .seller-card-badge {
+        position: absolute;
+        top: 10px;
+        left: 10px;
+        background: var(--primary-color, #e11d48);
+        color: white;
+        font-size: 0.72rem;
+        font-weight: 700;
+        padding: 0.25rem 0.65rem;
+        border-radius: 20px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .seller-card-body {
+        padding: 1.1rem 1.3rem;
+    }
+
+    .seller-card-price {
+        font-size: 1.2rem;
+        font-weight: 800;
+        color: var(--primary-color, #e11d48);
+        margin-bottom: 0.25rem;
+    }
+
+    .seller-card-title {
+        font-weight: 700;
+        color: #1e293b;
+        font-size: 0.95rem;
+        margin-bottom: 0.4rem;
+    }
+
+    .seller-card-city {
+        font-size: 0.82rem;
+        color: #64748b;
+        margin-bottom: 0.6rem;
+    }
+
+    .seller-card-meta {
+        display: flex;
+        gap: 1rem;
+        font-size: 0.8rem;
+        color: #475569;
+        margin-bottom: 1rem;
+    }
+
+    .seller-card-btn {
+        display: block;
+        text-align: center;
+        background: linear-gradient(135deg, #e11d48, #f59e0b);
+        color: white;
+        padding: 0.55rem;
+        border-radius: 10px;
+        font-weight: 600;
+        font-size: 0.85rem;
+        text-decoration: none;
+        transition: opacity 0.2s;
+    }
+
+    .seller-card-btn:hover {
+        opacity: 0.88;
+    }
+</style>
+
+<div class="seller-hero">
+    <div class="seller-avatar">{{ seller_name|first|upper }}</div>
+    <h1>{{ seller_name }}</h1>
+    <div class="seller-contact">
+        <i class="ph ph-envelope-simple"></i> {{ seller_email }}
+        &nbsp;&nbsp;|&nbsp;&nbsp;
+        <i class="ph ph-phone"></i> {{ seller_phone }}
+    </div>
+    <div class="seller-stats-row">
+        <div class="seller-stat-box">
+            <span class="num">{{ total_listings }}</span>
+            <span class="label">Active Listings</span>
+        </div>
+        <div class="seller-stat-box">
+            <span class="num">
+                {% if avg_price %}
+                {% if avg_price >= 10000000 %}
+                ₹{{ avg_price|floatformat:0 }}
+                {% elif avg_price >= 100000 %}
+                ₹{{ avg_price|floatformat:0 }}
+                {% else %}
+                ₹{{ avg_price|floatformat:0 }}
+                {% endif %}
+                {% else %}—{% endif %}
+            </span>
+            <span class="label">Avg. Listing Price</span>
+        </div>
+        <div class="seller-stat-box">
+            <span class="num">4.8 ★</span>
+            <span class="label">Seller Rating</span>
+        </div>
+    </div>
+</div>
+
+<div class="seller-listings-section">
+    <h2><i class="ph-fill ph-buildings" style="color:var(--primary-color);"></i> All Properties by {{ seller_name }}
+    </h2>
+    <div class="seller-grid">
+        {% for prop in listings %}
+        <div class="seller-card">
+            <div class="seller-card-img">
+                <div class="seller-card-badge">{{ prop.get_status_display }}</div>
+                {% if prop.image %}
+                <img src="{{ prop.image.url }}" alt="{{ prop.title }}">
+                {% else %}
+                <img src="https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&w=600&q=80"
+                    alt="Property">
+                {% endif %}
+            </div>
+            <div class="seller-card-body">
+                <div class="seller-card-price">₹ {{ prop.price }}</div>
+                <div class="seller-card-title">{{ prop.title }}</div>
+                <div class="seller-card-city"><i class="ph-fill ph-map-pin"></i> {{ prop.city }}, {{ prop.state }}</div>
+                <div class="seller-card-meta">
+                    <span>🛏 {{ prop.bhk }} BHK</span>
+                    <span>📐 {{ prop.sqft }} sqft</span>
+                    <span>🏠 {{ prop.get_property_type_display }}</span>
+                </div>
+                <a href="{% url 'property_detail' prop.id %}" class="seller-card-btn">View Details →</a>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,255 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Property Map View – Luxia Real Estate{% endblock %}
+
+{% block content %}
+<style>
+    .map-header {
+        background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+        padding: 2.5rem 2rem 2rem;
+        color: white;
+        text-align: center;
+    }
+
+    .map-header h1 {
+        font-size: 2rem;
+        font-weight: 700;
+        margin-bottom: 0.5rem;
+    }
+
+    .map-header p {
+        color: #94a3b8;
+        font-size: 1rem;
+    }
+
+    .map-stats {
+        display: flex;
+        gap: 2rem;
+        justify-content: center;
+        margin-top: 1.2rem;
+    }
+
+    .map-stat-badge {
+        background: rgba(255, 255, 255, 0.1);
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        border-radius: 100px;
+        padding: 0.4rem 1.2rem;
+        font-size: 0.85rem;
+        color: #e2e8f0;
+    }
+
+    .map-stat-badge strong {
+        color: #f59e0b;
+    }
+
+    #property-map {
+        width: 100%;
+        height: 560px;
+        z-index: 1;
+        border-bottom: 3px solid var(--primary-color);
+    }
+
+    .map-no-coords-notice {
+        background: #fef3c7;
+        border-left: 4px solid #f59e0b;
+        padding: 1rem 1.5rem;
+        font-size: 0.9rem;
+        color: #78350f;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .map-legend {
+        display: flex;
+        gap: 1.5rem;
+        align-items: center;
+        padding: 1rem 2rem;
+        background: white;
+        border-bottom: 1px solid #e2e8f0;
+        flex-wrap: wrap;
+    }
+
+    .legend-item {
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+        font-size: 0.85rem;
+        color: #475569;
+    }
+
+    .legend-dot {
+        width: 14px;
+        height: 14px;
+        border-radius: 50%;
+        flex-shrink: 0;
+    }
+
+    /* Popup custom styles */
+    .popup-card {
+        width: 200px;
+    }
+
+    .popup-card img {
+        width: 100%;
+        height: 100px;
+        object-fit: cover;
+        border-radius: 6px;
+        margin-bottom: 0.5rem;
+    }
+
+    .popup-card h4 {
+        font-size: 0.85rem;
+        font-weight: 700;
+        margin: 0 0 0.25rem;
+        color: #1e293b;
+    }
+
+    .popup-card .popup-city {
+        font-size: 0.75rem;
+        color: #64748b;
+        margin-bottom: 0.4rem;
+    }
+
+    .popup-card .popup-price {
+        font-size: 0.95rem;
+        font-weight: 800;
+        color: var(--primary-color, #e11d48);
+        margin-bottom: 0.5rem;
+    }
+
+    .popup-card .popup-meta {
+        display: flex;
+        gap: 0.5rem;
+        font-size: 0.75rem;
+        color: #475569;
+        margin-bottom: 0.6rem;
+    }
+
+    .popup-card a.popup-btn {
+        display: block;
+        text-align: center;
+        background: linear-gradient(135deg, #e11d48, #f59e0b);
+        color: white;
+        padding: 0.4rem;
+        border-radius: 6px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        text-decoration: none;
+    }
+</style>
+
+<div class="map-header">
+    <h1><i class="ph-fill ph-map-trifold"></i> Property Map</h1>
+    <p>Browse all properties across India on an interactive map</p>
+    <div class="map-stats">
+        <div class="map-stat-badge"><strong>{{ total_properties }}</strong> Total Properties</div>
+        <div class="map-stat-badge"><strong>{{ total_on_map }}</strong> Mapped Locations</div>
+        {% if total_properties > total_on_map %}
+        <div class="map-stat-badge">{{ total_properties|add:"-"|add:total_on_map }} without coordinates</div>
+        {% endif %}
+    </div>
+</div>
+
+{% if total_on_map == 0 %}
+<div class="map-no-coords-notice">
+    <i class="ph-fill ph-warning-circle" style="font-size:1.4rem;"></i>
+    <div>
+        <strong>No properties have map coordinates yet.</strong>
+        Properties need latitude and longitude set in the admin panel to appear on the map.
+        All {{ total_properties }} properties are listed on the <a href="{% url 'properties' %}"
+            style="color:#92400e;font-weight:600;">Properties page</a>.
+    </div>
+</div>
+{% else %}
+<div class="map-legend">
+    <span style="font-weight:600;color:#1e293b;font-size:0.9rem;">Status Legend:</span>
+    <div class="legend-item">
+        <div class="legend-dot" style="background:#22c55e;"></div> Available
+    </div>
+    <div class="legend-item">
+        <div class="legend-dot" style="background:#f59e0b;"></div> Rented
+    </div>
+    <div class="legend-item">
+        <div class="legend-dot" style="background:#ef4444;"></div> Sold
+    </div>
+</div>
+{% endif %}
+
+<div id="property-map"></div>
+
+<!-- Leaflet CSS & JS -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<script>
+    const propertiesData = {{ properties_json| safe }};
+
+    const map = L.map('property-map', {
+        center: [20.5937, 78.9629],
+        zoom: 5,
+        zoomControl: true
+    });
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+        maxZoom: 18
+    }).addTo(map);
+
+    function getMarkerColor(status) {
+        if (status === 'Available') return '#22c55e';
+        if (status === 'Rented') return '#f59e0b';
+        return '#ef4444';
+    }
+
+    function createMarkerIcon(status) {
+        const color = getMarkerColor(status);
+        return L.divIcon({
+            className: '',
+            html: `<div style="
+        width:28px;height:28px;border-radius:50% 50% 50% 0;
+        background:${color};border:3px solid white;
+        box-shadow:0 2px 8px rgba(0,0,0,0.3);
+        transform:rotate(-45deg)"></div>`,
+            iconSize: [28, 28],
+            iconAnchor: [14, 28],
+            popupAnchor: [0, -30]
+        });
+    }
+
+    function formatPrice(price) {
+        if (price >= 10000000) return '₹' + (price / 10000000).toFixed(2) + ' Cr';
+        if (price >= 100000) return '₹' + (price / 100000).toFixed(2) + ' L';
+        return '₹' + price.toLocaleString('en-IN');
+    }
+
+    const bounds = [];
+
+    propertiesData.forEach(p => {
+        const icon = createMarkerIcon(p.status);
+        const marker = L.marker([p.lat, p.lng], { icon }).addTo(map);
+        const imgHtml = p.image_url
+            ? `<img src="${p.image_url}" alt="${p.title}" />`
+            : `<div style="width:100%;height:80px;background:#e2e8f0;border-radius:6px;display:flex;align-items:center;justify-content:center;margin-bottom:0.5rem;color:#94a3b8;font-size:0.75rem;">No Image</div>`;
+        marker.bindPopup(`
+      <div class="popup-card">
+        ${imgHtml}
+        <h4>${p.title}</h4>
+        <div class="popup-city"><i>📍</i> ${p.city}</div>
+        <div class="popup-price">${formatPrice(p.price)}</div>
+        <div class="popup-meta">
+          <span>🛏 ${p.bhk} BHK</span>
+          <span>📐 ${p.sqft} sqft</span>
+        </div>
+        <a href="/property/${p.id}/" class="popup-btn">View Details →</a>
+      </div>
+    `, { maxWidth: 220 });
+        bounds.push([p.lat, p.lng]);
+    });
+
+    if (bounds.length > 0) {
+        map.fitBounds(bounds, { padding: [40, 40] });
+    }
+</script>
+{% endblock %}

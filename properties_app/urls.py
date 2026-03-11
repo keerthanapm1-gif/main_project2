@@ -22,6 +22,7 @@ urlpatterns = [
     
     # Video Call URL
     path('video-call/<str:room_name>/', views.video_call_room, name='video_call_room'),
+    path('video-call/property/<int:property_id>/', views.video_call_property, name='video_call_property'),
     
     # Chatbot API
     path('api/chatbot/', views.chatbot_api, name='chatbot_api'),
@@ -29,4 +30,21 @@ urlpatterns = [
     # Phase 5: Price Estimator
     path('price-estimator/', views.price_estimator, name='price_estimator'),
     path('api/estimate-price/', views.api_estimate_price, name='api_estimate_price'),
+    
+    # Phase 6: Financial & Legal Automation
+    path('property/<int:property_id>/lease/', views.lease_generation, name='lease_generation'),
+    path('property/<int:property_id>/payment-split/', views.payment_splitter, name='payment_splitter'),
+    path('tax-compliance/', views.tax_compliance, name='tax_compliance'),
+    
+    # New Housing.com Features
+    path('emi-calculator/', views.emi_calculator, name='emi_calculator'),
+    path('compare/', views.compare_properties, name='compare_properties'),
+    path('post-property/', views.post_property, name='post_property'),
+
+    # Phase 7: New 99acres-inspired Features
+    path('map/', views.map_view, name='map_view'),
+    path('seller/<str:seller_email>/', views.seller_profile, name='seller_profile'),
+    path('save-search/', views.save_search, name='save_search'),
+    path('saved-searches/', views.saved_searches, name='saved_searches'),
+    path('loan-eligibility/', views.loan_eligibility, name='loan_eligibility'),
 ]

@@ -1,0 +1,122 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}EMI Calculator | Luxia Real Estate{% endblock %}
+
+{% block content %}
+<div class="container" style="margin-top: 3rem;">
+    <div style="text-align: center; margin-bottom: 3rem;">
+        <h1 style="font-size: 2.5rem; margin-bottom: 0.5rem;">Home Loan EMI Calculator</h1>
+        <p style="color: var(--text-muted);">Plan your home purchase with our easy-to-use calculator.</p>
+    </div>
+
+    <div class="emi-container">
+        <!-- Input Side -->
+        <div class="emi-inputs">
+            <div class="emi-slider-group">
+                <div class="emi-slider-header">
+                    <span>Loan Amount (₹)</span>
+                    <span id="amount-val" style="color: var(--primary-color);">₹ 50,00,000</span>
+                </div>
+                <input type="range" class="emi-slider" id="loan-amount" min="100000" max="100000000" step="100000"
+                    value="5000000">
+            </div>
+
+            <div class="emi-slider-group">
+                <div class="emi-slider-header">
+                    <span>Interest Rate (%)</span>
+                    <span id="interest-val" style="color: var(--primary-color);">8.5 %</span>
+                </div>
+                <input type="range" class="emi-slider" id="interest-rate" min="5" max="20" step="0.1" value="8.5">
+            </div>
+
+            <div class="emi-slider-group">
+                <div class="emi-slider-header">
+                    <span>Tenure (Years)</span>
+                    <span id="tenure-val" style="color: var(--primary-color);">20 Years</span>
+                </div>
+                <input type="range" class="emi-slider" id="loan-tenure" min="1" max="30" step="1" value="20">
+            </div>
+        </div>
+
+        <!-- Result Side -->
+        <div class="emi-results">
+            <div class="emi-result-card">
+                <p
+                    style="text-transform: uppercase; font-size: 0.75rem; font-weight: 700; color: var(--text-muted); margin-bottom: 0.5rem;">
+                    Monthly EMI</p>
+                <h2 id="monthly-emi" style="font-size: 3rem; color: var(--primary-color); margin-bottom: 2rem;">₹ 43,391
+                </h2>
+
+                <div
+                    style="display: flex; justify-content: space-around; border-top: 1px solid #e2e8f0; padding-top: 2rem;">
+                    <div>
+                        <p style="color: var(--text-muted); font-size: 0.875rem;">Principal Amount</p>
+                        <p id="total-principal" style="font-weight: 700; font-size: 1.125rem;">₹ 50,00,000</p>
+                    </div>
+                    <div>
+                        <p style="color: var(--text-muted); font-size: 0.875rem;">Total Interest</p>
+                        <p id="total-interest" style="font-weight: 700; font-size: 1.125rem; color: #f59e0b;">₹
+                            54,13,840</p>
+                    </div>
+                </div>
+
+                <div style="margin-top: 2rem;">
+                    <p style="color: var(--text-muted); font-size: 0.875rem; margin-bottom: 0.5rem;">Total Amount
+                        Payable</p>
+                    <p id="total-payable" style="font-weight: 800; font-size: 1.5rem; color: var(--text-main);">₹
+                        1,04,13,840</p>
+                </div>
+            </div>
+
+            <p style="margin-top: 1.5rem; font-size: 0.8rem; color: var(--text-muted); text-align: center;">
+                * This is an estimate based on your inputs. Actual rates may vary by bank.
+            </p>
+        </div>
+    </div>
+</div>
+
+<script>
+    const amountSlider = document.getElementById('loan-amount');
+    const interestSlider = document.getElementById('interest-rate');
+    const tenureSlider = document.getElementById('loan-tenure');
+
+    const amountVal = document.getElementById('amount-val');
+    const interestVal = document.getElementById('interest-val');
+    const tenureVal = document.getElementById('tenure-val');
+
+    const emiDisplay = document.getElementById('monthly-emi');
+    const principalDisplay = document.getElementById('total-principal');
+    const interestDisplay = document.getElementById('total-interest');
+    const payableDisplay = document.getElementById('total-payable');
+
+    function formatCurrency(num) {
+        return '₹ ' + Math.round(num).toLocaleString('en-IN');
+    }
+
+    function calculateEMI() {
+        let P = parseFloat(amountSlider.value);
+        let R = parseFloat(interestSlider.value) / 12 / 100;
+        let N = parseFloat(tenureSlider.value) * 12;
+
+        amountVal.textContent = formatCurrency(P);
+        interestVal.textContent = interestSlider.value + ' %';
+        tenureVal.textContent = tenureSlider.value + ' Years';
+
+        let emi = P * R * Math.pow(1 + R, N) / (Math.pow(1 + R, N) - 1);
+        let totalPayable = emi * N;
+        let totalInterest = totalPayable - P;
+
+        emiDisplay.textContent = formatCurrency(emi);
+        principalDisplay.textContent = formatCurrency(P);
+        interestDisplay.textContent = formatCurrency(totalInterest);
+        payableDisplay.textContent = formatCurrency(totalPayable);
+    }
+
+    [amountSlider, interestSlider, tenureSlider].forEach(slider => {
+        slider.addEventListener('input', calculateEMI);
+    });
+
+    calculateEMI();
+</script>
+{% endblock %}

@@ -62,6 +62,26 @@ class Property(models.Model):
     seller_phone = models.CharField(max_length=20)
     seller_email = models.EmailField()
 
+    # New Filters (Feature 3)
+    FURNISHED_CHOICES = [
+        ('unfurnished', 'Unfurnished'),
+        ('semi-furnished', 'Semi-Furnished'),
+        ('fully-furnished', 'Fully-furnished'),
+    ]
+    FACING_CHOICES = [
+        ('north', 'North'),
+        ('south', 'South'),
+        ('east', 'East'),
+        ('west', 'West'),
+        ('north-east', 'North-East'),
+        ('north-west', 'North-West'),
+        ('south-east', 'South-East'),
+        ('south-west', 'South-West'),
+    ]
+    furnished_status = models.CharField(max_length=20, choices=FURNISHED_CHOICES, default='unfurnished')
+    facing = models.CharField(max_length=20, choices=FACING_CHOICES, blank=True, null=True)
+    floor_number = models.IntegerField(default=0, help_text="Floor number (0 for ground)")
+
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -166,3 +186,90 @@ class ChatMessage(models.Model):
 
     def __str__(self):
         return f"From {self.sender.username} to {self.receiver.username}"
+
+class Lease(models.Model):
+    property = models.ForeignKey(Property, on_delete=models.CASCADE, related_name='leases')
+    tenant = models.ForeignKey(User, on_delete=models.CASCADE, related_name='leases')
+    start_date = models.DateField()
+    end_date = models.DateField()
+    rent_amount = models.DecimalField(max_digits=12, decimal_places=2)
+    deposit_amount = models.DecimalField(max_digits=12, decimal_places=2)
+    clauses = models.TextField(blank=True, null=True, help_text="Local legal clauses and terms")
+    document = models.FileField(upload_to='leases/', blank=True, null=True)
+    is_signed = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Lease for {self.property.title} by {self.tenant.username}"
+
+class PaymentSplit(models.Model):
+    lease = models.ForeignKey(Lease, on_delete=models.CASCADE, related_name='payments')
+    amount_paid = models.DecimalField(max_digits=12, decimal_places=2)
+    payment_date = models.DateField(auto_now_add=True)
+    is_deposit = models.BooleanField(default=False)
+    
+    # Split logic
+    owner_split = models.DecimalField(max_digits=12, decimal_places=2)
+    management_fee = models.DecimalField(max_digits=12, decimal_places=2)
+    
+    status_choices = [
+        ('pending', 'Pending'),
+        ('escrow', 'In Escrow'),
+        ('released', 'Released to Owner')
+    ]
+    status = models.CharField(max_length=20, choices=status_choices, default='escrow')
+
+    def save(self, *args, **kwargs):
+        if not self.is_deposit and self.management_fee == 0:
+            # Assuming a standard 10% management fee for rent
+            self.management_fee = float(self.amount_paid) * 0.10
+            self.owner_split = float(self.amount_paid) - float(self.management_fee)
+        elif self.is_deposit:
+            # Deposits are fully held
+            self.management_fee = 0
+            self.owner_split = self.amount_paid
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"Payment of {self.amount_paid} for {self.lease.property.title}"
+
+class TaxReport(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='tax_reports')
+    year = models.IntegerField()
+    report_type_choices = [
+        ('1099', '1099-MISC'),
+        ('expense', 'Expense Report')
+    ]
+    report_type = models.CharField(max_length=20, choices=report_type_choices)
+    document = models.FileField(upload_to='tax_reports/', blank=True, null=True)
+    generated_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.get_report_type_display()} for {self.user.username} - {self.year}"
+
+class SavedSearch(models.Model):
+    user = models.ForeignKey(User, related_name='saved_searches', on_delete=models.CASCADE)
+    query = models.CharField(max_length=200, blank=True, null=True, help_text="Search keyword")
+    city = models.CharField(max_length=100, blank=True, null=True)
+    property_type = models.CharField(max_length=20, blank=True, null=True)
+    bhk = models.IntegerField(blank=True, null=True)
+    min_price = models.DecimalField(max_digits=12, decimal_places=2, blank=True, null=True)
+    max_price = models.DecimalField(max_digits=12, decimal_places=2, blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Saved search by {self.user.username}: {self.query or self.city or 'Custom filters'}"
+
+    def get_search_url(self):
+        params = []
+        if self.query:
+            params.append(f"q={self.query}")
+        if self.property_type:
+            params.append(f"type={self.property_type}")
+        if self.bhk:
+            params.append(f"bhk={self.bhk}")
+        if self.min_price:
+            params.append(f"min_price={int(self.min_price)}")
+        if self.max_price:
+            params.append(f"max_price={int(self.max_price)}")
+        return "/properties/?" + "&".join(params) if params else "/properties/"
