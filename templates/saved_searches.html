@@ -1,5 +1,6 @@
 {% extends 'base.html' %}
 {% load static %}
+{% load humanize %}
 
 {% block title %}Saved Searches – Property Alerts | Luxia{% endblock %}
 
@@ -190,8 +191,8 @@
                 {% if s.city %}<span class="ss-tag">📍 {{ s.city }}</span>{% endif %}
                 {% if s.property_type %}<span class="ss-tag">🏠 {{ s.property_type|title }}</span>{% endif %}
                 {% if s.bhk %}<span class="ss-tag">🛏 {{ s.bhk }} BHK</span>{% endif %}
-                {% if s.min_price %}<span class="ss-tag">💰 Min ₹{{ s.min_price|floatformat:0 }}</span>{% endif %}
-                {% if s.max_price %}<span class="ss-tag">💰 Max ₹{{ s.max_price|floatformat:0 }}</span>{% endif %}
+                {% if s.min_price %}<span class="ss-tag">💰 Min ₹{{ s.min_price|floatformat:0|intcomma }}</span>{% endif %}
+                {% if s.max_price %}<span class="ss-tag">💰 Max ₹{{ s.max_price|floatformat:0|intcomma }}</span>{% endif %}
             </div>
             <div class="ss-date">Saved on {{ s.created_at|date:"d M Y, g:i A" }}</div>
         </div>

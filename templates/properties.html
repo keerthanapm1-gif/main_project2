@@ -55,7 +55,8 @@
                     <div style="display: flex; flex-direction: column; gap: 0.5rem;">
                         <label
                             style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.9rem; cursor: pointer;">
-                            <input type="checkbox" name="has_parking" {% if 'has_parking' in request.GET %}checked{% endif %}> Parking
+                            <input type="checkbox" name="has_parking" {% if 'has_parking' in request.GET %}checked{%
+                                endif %}> Parking
                         </label>
                         <label
                             style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.9rem; cursor: pointer;">
@@ -64,7 +65,8 @@
                         </label>
                         <label
                             style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.9rem; cursor: pointer;">
-                            <input type="checkbox" name="has_power_backup" {% if 'has_power_backup' in request.GET %}checked{% endif %}> Power Backup
+                            <input type="checkbox" name="has_power_backup" {% if 'has_power_backup' in request.GET
+                                %}checked{% endif %}> Power Backup
                         </label>
                     </div>
                 </div>
@@ -149,7 +151,8 @@
                                 </label>
                             </div>
                             <h3 class="property-title" style="font-size: 1.125rem;">{{ property.title }}</h3>
-                            <div class="property-address"><i class="ph-fill ph-map-pin"></i> {{ property.city }}, {{ property.state }}</div>
+                            <div class="property-address"><i class="ph-fill ph-map-pin"></i> {{ property.city }}, {{
+                                property.state }}</div>
                             <div class="property-features">
                                 <span class="feature"><i class="ph-fill ph-bed"></i> {{ property.bhk }} BHK</span>
                                 <span class="feature"><i class="ph-fill ph-square-logo"></i> {{ property.sqft }}
@@ -186,17 +189,20 @@
 
 
 <!-- Comparison Bar (Sticky Bottom) -->
-<div id="comparison-bar" style="position: fixed; bottom: 0; left: 0; right: 0; background: white; border-top: 1px solid var(--border-color); box-shadow: 0 -10px 15px -3px rgba(0,0,0,0.1); padding: 1rem; display: none; z-index: 1000; animation: slideUp 0.3s ease-out;">
+<div id="comparison-bar"
+    style="position: fixed; bottom: 0; left: 0; right: 0; background: white; border-top: 1px solid var(--border-color); box-shadow: 0 -10px 15px -3px rgba(0,0,0,0.1); padding: 1rem; display: none; z-index: 1000; animation: slideUp 0.3s ease-out;">
     <div class="container" style="display: flex; justify-content: space-between; align-items: center;">
         <div style="display: flex; align-items: center; gap: 1rem;">
-            <div style="background: var(--primary-color); color: white; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700;" id="compare-count">0</div>
+            <div style="background: var(--primary-color); color: white; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700;"
+                id="compare-count">0</div>
             <div>
                 <h4 style="margin: 0; font-size: 1rem;">Properties selected for comparison</h4>
                 <p style="margin: 0; font-size: 0.85rem; color: var(--text-muted);" id="compare-titles">None</p>
             </div>
         </div>
         <div style="display: flex; gap: 1rem;">
-            <button onclick="clearComparison()" class="btn btn-secondary" style="padding: 0.5rem 1rem;">Clear All</button>
+            <button onclick="clearComparison()" class="btn btn-secondary" style="padding: 0.5rem 1rem;">Clear
+                All</button>
             <a href="#" id="compare-link" class="btn btn-primary" style="padding: 0.5rem 1.5rem;">Compare Now</a>
         </div>
     </div>
@@ -204,9 +210,15 @@
 
 <style>
     @keyframes slideUp {
-        from { transform: translateY(100%); }
-        to { transform: translateY(0); }
+        from {
+            transform: translateY(100%);
+        }
+
+        to {
+            transform: translateY(0);
+        }
     }
+
     .filter-chip.active {
         background: var(--primary-color);
         color: white;
@@ -234,14 +246,14 @@
         if (selectedProperties.length > 0) {
             bar.style.display = 'block';
             count.innerText = selectedProperties.length;
-            
+
             // Get titles from checkboxes on the current page for display
             let titlesList = [];
             selectedProperties.forEach(id => {
                 const cb = document.querySelector(`.compare-check[data-id="${id}"]`);
                 if (cb) titlesList.push(cb.dataset.title);
             });
-            
+
             if (titlesList.length > 0) {
                 titles.innerText = titlesList.join(', ');
             } else {
@@ -259,7 +271,7 @@
         });
     }
 
-    window.toggleCompare = function(id, title) {
+    window.toggleCompare = function (id, title) {
         id = id.toString();
         const index = selectedProperties.indexOf(id);
         if (index > -1) {
@@ -275,7 +287,7 @@
         updateComparisonBar();
     };
 
-    window.clearComparison = function() {
+    window.clearComparison = function () {
         selectedProperties = [];
         localStorage.setItem('compare_ids', JSON.stringify(selectedProperties));
         updateComparisonBar();

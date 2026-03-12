@@ -161,9 +161,11 @@
 
             <h3>Description</h3>
             <p style="color: var(--text-muted); line-height: 1.8;">{{ property.description }}</p>
-            <p style="color: var(--text-muted); line-height: 1.8;">Address: {{ property.address }}, {{ property.city }}, {{ property.state }} - {{ property.pincode }}</p>
+            <p style="color: var(--text-muted); line-height: 1.8;">Address: {{ property.address }}, {{ property.city }},
+                {{ property.state }} - {{ property.pincode }}</p>
             {% if property.survey_number %}
-            <p style="color: var(--text-muted); line-height: 1.8;"><strong>Survey/Plot Number:</strong> {{ property.survey_number }}</p>
+            <p style="color: var(--text-muted); line-height: 1.8;"><strong>Survey/Plot Number:</strong> {{
+                property.survey_number }}</p>
             {% endif %}
         </div>
 
@@ -211,7 +213,8 @@
                             {{ review.rating }} / 5 <i class="ph-fill ph-star"></i>
                         </div>
                     </div>
-                    <p style="color: var(--text-color); margin: 0 0 0.5rem 0; line-height: 1.6;">{{ review.review_text }}</p>
+                    <p style="color: var(--text-color); margin: 0 0 0.5rem 0; line-height: 1.6;">{{ review.review_text
+                        }}</p>
                     <small style="color: var(--text-muted);">{{ review.created_at|date:"M d, Y" }}</small>
                 </div>
                 {% empty %}
@@ -327,12 +330,7 @@
                         <textarea name="message" class="form-input" rows="3" placeholder="I am interested..."
                             required></textarea>
                     </div>
-                    <div style="margin-bottom: 1rem;">
-                        <select name="inquiry_type" class="form-input" required>
-                            <option value="email">Send Email</option>
-                            <option value="whatsapp">Contact via WhatsApp</option>
-                        </select>
-                    </div>
+                    <input type="hidden" name="inquiry_type" value="whatsapp">
                     <button type="submit" class="btn btn-primary" style="width: 100%;">Send Inquiry</button>
                 </form>
             </div>

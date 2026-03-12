@@ -146,6 +146,23 @@ def property_detail(request, pk):
 def about(request):
     return render(request, 'about.html')
 
+def contact_us(request):
+    if request.method == 'POST':
+        form = InquiryForm(request.POST)
+        if form.is_valid():
+            inquiry = form.save(commit=False)
+            if request.user.is_authenticated:
+                inquiry.user = request.user
+            inquiry.save()
+            messages.success(request, 'Thank you for contacting us! We will get back to you soon.')
+            return redirect('contact_us')
+        else:
+            messages.error(request, 'Please correct the errors in the form.')
+    else:
+        form = InquiryForm()
+    
+    return render(request, 'contact_us.html', {'form': form})
+
 def register_user(request):
     if request.method == 'POST':
         form = UserRegistrationForm(request.POST)
@@ -536,24 +553,7 @@ def payment_splitter(request, property_id):
             
     return render(request, 'payment_splitter.html', {'property': prop, 'leases': leases, 'payments': payments})
 
-@login_required
-def tax_compliance(request):
-    reports = TaxReport.objects.filter(user=request.user).order_by('-year', '-generated_at')
-    
-    if request.method == 'POST':
-        report_type = request.POST.get('report_type')
-        year = request.POST.get('year')
-        
-        if report_type and year:
-            TaxReport.objects.create(
-                user=request.user,
-                year=year,
-                report_type=report_type
-            )
-            messages.success(request, f'Successfully auto-generated {report_type} compliant forms for {year}.')
-            return redirect('tax_compliance')
-            
-    return render(request, 'tax_compliance.html', {'reports': reports})
+    return render(request, 'payment_splitter.html', {'property': prop, 'leases': leases, 'payments': payments})
 
 # ─── EMI Calculator ────────────────────────────────────────────
 def emi_calculator(request):

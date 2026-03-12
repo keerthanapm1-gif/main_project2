@@ -1,5 +1,6 @@
 {% extends 'base.html' %}
 {% load static %}
+{% load humanize %}
 
 {% block content %}
 <section class="hero">
@@ -80,7 +81,7 @@
                         {% endif %}
                     </div>
                     <div style="padding:1rem;">
-                        <div style="color:#f59e0b; font-size:1.1rem; font-weight:800; margin-bottom:0.3rem;">₹ {{ prop.price }}</div>
+                        <div style="color:#f59e0b; font-size:1.1rem; font-weight:800; margin-bottom:0.3rem;">₹ {{ prop.price|intcomma }}</div>
                         <div
                             style="color:white; font-weight:600; font-size:0.9rem; margin-bottom:0.3rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
                             {{ prop.title }}</div>
@@ -148,7 +149,7 @@
                     {% endif %}
                 </div>
                 <div class="property-content">
-                    <div class="property-price">₹ {{ property.price }}</div>
+                    <div class="property-price">₹ {{ property.price|intcomma }}</div>
                     <h3 class="property-title">{{ property.title }}</h3>
                     <div class="property-address"><i class="ph-fill ph-map-pin"></i> {{ property.city }}, {{ property.state }}</div>
                     <div class="property-features">

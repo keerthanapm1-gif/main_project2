@@ -161,7 +161,7 @@ class PropertyReview(models.Model):
         return f"Review by {self.user.username} for {self.property.title}"
 
 class Inquiry(models.Model):
-    property = models.ForeignKey(Property, related_name='inquiries', on_delete=models.CASCADE)
+    property = models.ForeignKey(Property, related_name='inquiries', on_delete=models.CASCADE, null=True, blank=True)
     user = models.ForeignKey(User, related_name='inquiries', on_delete=models.CASCADE, null=True, blank=True)
     name = models.CharField(max_length=150)
     email = models.EmailField()

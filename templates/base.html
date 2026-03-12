@@ -29,7 +29,6 @@
             <a href="{% url 'price_estimator' %}">Price AI</a>
             {% if user.is_authenticated %}
             <a href="{% url 'saved_searches' %}"><i class="ph ph-bell"></i> Alerts</a>
-            <a href="{% url 'tax_compliance' %}">Tax</a>
             <a href="{% url 'post_property' %}" class="btn btn-primary"
                 style="padding: 0.5rem 1rem; background: linear-gradient(135deg, #FF3366, #FF9933); border: none;">Post
                 Property FREE</a>
@@ -75,6 +74,7 @@
                     <a href="{% url 'home' %}" style="color: #94a3b8;">Home</a>
                     <a href="{% url 'properties' %}" style="color: #94a3b8;">Properties</a>
                     <a href="{% url 'about' %}" style="color: #94a3b8;">About Us</a>
+                    <a href="{% url 'contact_us' %}" style="color: #94a3b8;">Contact Us</a>
                 </div>
             </div>
             <div class="footer-section">

@@ -1,0 +1,131 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Contact Us - Luxia Real Estate{% endblock %}
+
+{% block content %}
+<section class="contact-hero"
+    style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); padding: 5rem 0; color: white; text-align: center;">
+    <div class="container">
+        <h1 style="font-size: 3rem; font-weight: 800; margin-bottom: 1rem;">Get in Touch</h1>
+        <p style="font-size: 1.25rem; color: #94a3b8; max-width: 600px; margin: 0 auto;">Whether you're looking to buy
+            your dream home or sell your property at the best price, our experts are here to help you.</p>
+    </div>
+</section>
+
+<section class="container" style="margin-top: -4rem; margin-bottom: 5rem;">
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 2.5rem;">
+
+        <!-- Seller Contact Card -->
+        <div
+            style="background: white; border-radius: 24px; padding: 3rem; box-shadow: 0 20px 40px rgba(0,0,0,0.05); border: 1px solid #f1f5f9; display: flex; flex-direction: column; gap: 1.5rem;">
+            <div
+                style="width: 60px; height: 60px; background: #e0f2fe; color: #0284c7; border-radius: 16px; display: flex; align-items: center; justify-content: center; font-size: 2rem;">
+                <i class="ph-fill ph-house-line"></i>
+            </div>
+            <div>
+                <h2 style="font-size: 1.75rem; font-weight: 700; margin-bottom: 0.5rem; color: #0f172a;">For Sellers
+                </h2>
+                <p style="color: #64748b; line-height: 1.6;">List your property with Luxia and reach thousands of
+                    verified buyers. Get a free valuation and expert marketing support.</p>
+            </div>
+
+            <form method="POST" style="display: flex; flex-direction: column; gap: 1.25rem;">
+                {% csrf_token %}
+                <input type="hidden" name="inquiry_type" value="whatsapp">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                    <input type="text" name="name" placeholder="Full Name" required
+                        style="padding: 1rem; border-radius: 12px; border: 1px solid #e2e8f0; outline: none; font-size: 0.95rem;">
+                    <input type="email" name="email" placeholder="Email Address" required
+                        style="padding: 1rem; border-radius: 12px; border: 1px solid #e2e8f0; outline: none; font-size: 0.95rem;">
+                </div>
+                <input type="text" name="phone" placeholder="Phone Number" required
+                    style="padding: 1rem; border-radius: 12px; border: 1px solid #e2e8f0; outline: none; font-size: 0.95rem;">
+                <textarea name="message" placeholder="Tell us about your property..." rows="4" required
+                    style="padding: 1rem; border-radius: 12px; border: 1px solid #e2e8f0; outline: none; font-size: 0.95rem; resize: none;"></textarea>
+                <button type="submit" class="btn btn-primary"
+                    style="padding: 1.25rem; font-weight: 700; border-radius: 12px; background: linear-gradient(135deg, #0284c7, #3b82f6); border: none; font-size: 1rem; cursor: pointer; transition: transform 0.2s;">
+                    Register as Seller
+                </button>
+            </form>
+        </div>
+
+        <!-- Buyer Contact Card -->
+        <div
+            style="background: white; border-radius: 24px; padding: 3rem; box-shadow: 0 20px 40px rgba(0,0,0,0.05); border: 1px solid #f1f5f9; display: flex; flex-direction: column; gap: 1.5rem;">
+            <div
+                style="width: 60px; height: 60px; background: #fef2f2; color: #dc2626; border-radius: 16px; display: flex; align-items: center; justify-content: center; font-size: 2rem;">
+                <i class="ph-fill ph-magnifying-glass"></i>
+            </div>
+            <div>
+                <h2 style="font-size: 1.75rem; font-weight: 700; margin-bottom: 0.5rem; color: #0f172a;">For Buyers</h2>
+                <p style="color: #64748b; line-height: 1.6;">Finding the right home can be overwhelming. Let our premium
+                    consultants help you find exactly what you're looking for.</p>
+            </div>
+
+            <form method="POST" style="display: flex; flex-direction: column; gap: 1.25rem;">
+                {% csrf_token %}
+                <input type="hidden" name="inquiry_type" value="whatsapp">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                    <input type="text" name="name" placeholder="Full Name" required
+                        style="padding: 1rem; border-radius: 12px; border: 1px solid #e2e8f0; outline: none; font-size: 0.95rem;">
+                    <input type="email" name="email" placeholder="Email Address" required
+                        style="padding: 1rem; border-radius: 12px; border: 1px solid #e2e8f0; outline: none; font-size: 0.95rem;">
+                </div>
+                <input type="text" name="phone" placeholder="Phone Number" required
+                    style="padding: 1rem; border-radius: 12px; border: 1px solid #e2e8f0; outline: none; font-size: 0.95rem;">
+                <textarea name="message" placeholder="What are your requirements? (Location, BHK, Budget...)" rows="4"
+                    required
+                    style="padding: 1rem; border-radius: 12px; border: 1px solid #e2e8f0; outline: none; font-size: 0.95rem; resize: none;"></textarea>
+                <button type="submit" class="btn btn-primary"
+                    style="padding: 1.25rem; font-weight: 700; border-radius: 12px; background: linear-gradient(135deg, #FF3366, #FF9933); border: none; font-size: 1rem; cursor: pointer; transition: transform 0.2s;">
+                    Submit Buyer Inquiry
+                </button>
+            </form>
+        </div>
+
+    </div>
+</section>
+
+<!-- Contact Info Section -->
+<section style="background: #f8fafc; padding: 5rem 0; border-top: 1px solid #e2e8f0;">
+    <div class="container">
+        <div style="text-align: center; margin-bottom: 4rem;">
+            <h2 style="font-size: 2rem; font-weight: 800; color: #0f172a; margin-bottom: 1rem;">Direct Contact Channels
+            </h2>
+            <p style="color: #64748b;">Prefer a more direct approach? Reach out to us through any of these channels.</p>
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 2rem;">
+            <div style="background: white; padding: 2.5rem; border-radius: 20px; text-align: center; border: 1px solid #e2e8f0; transition: transform 0.3s;"
+                onmouseover="this.style.transform='translateY(-10px)'"
+                onmouseout="this.style.transform='translateY(0)'">
+                <i class="ph ph-envelope-simple" style="font-size: 2.5rem; color: #0284c7; margin-bottom: 1.5rem;"></i>
+                <h3 style="font-size: 1.25rem; font-weight: 700; margin-bottom: 0.75rem;">Email Us</h3>
+                <p style="color: #64748b; font-size: 0.9rem; margin-bottom: 1rem;">Drop us a line anytime!</p>
+                <a href="mailto:contact@luxia.in"
+                    style="font-weight: 600; color: #0284c7; text-decoration: none;">contact@luxia.in</a>
+            </div>
+
+            <div style="background: white; padding: 2.5rem; border-radius: 20px; text-align: center; border: 1px solid #e2e8f0; transition: transform 0.3s;"
+                onmouseover="this.style.transform='translateY(-10px)'"
+                onmouseout="this.style.transform='translateY(0)'">
+                <i class="ph ph-phone" style="font-size: 2.5rem; color: #22c55e; margin-bottom: 1.5rem;"></i>
+                <h3 style="font-size: 1.25rem; font-weight: 700; margin-bottom: 0.75rem;">Call Support</h3>
+                <p style="color: #64748b; font-size: 0.9rem; margin-bottom: 1rem;">Mon - Sat, 9am - 7pm</p>
+                <a href="tel:+9118001234567" style="font-weight: 600; color: #0f172a; text-decoration: none;">+91 1800
+                    123 4567</a>
+            </div>
+
+            <div style="background: white; padding: 2.5rem; border-radius: 20px; text-align: center; border: 1px solid #e2e8f0; transition: transform 0.3s;"
+                onmouseover="this.style.transform='translateY(-10px)'"
+                onmouseout="this.style.transform='translateY(0)'">
+                <i class="ph ph-map-pin" style="font-size: 2.5rem; color: #ef4444; margin-bottom: 1.5rem;"></i>
+                <h3 style="font-size: 1.25rem; font-weight: 700; margin-bottom: 0.75rem;">Our Office</h3>
+                <p style="color: #64748b; font-size: 0.9rem; margin-bottom: 1rem;">Visit us for a coffee</p>
+                <span style="font-weight: 600; color: #0f172a;">123 Prime Street, Mumbai, MH</span>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

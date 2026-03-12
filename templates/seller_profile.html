@@ -1,5 +1,6 @@
 {% extends 'base.html' %}
 {% load static %}
+{% load humanize %}
 
 {% block title %}{{ seller_name }} – Seller Profile | Luxia Real Estate{% endblock %}
 
@@ -201,13 +202,7 @@
         <div class="seller-stat-box">
             <span class="num">
                 {% if avg_price %}
-                {% if avg_price >= 10000000 %}
-                ₹{{ avg_price|floatformat:0 }}
-                {% elif avg_price >= 100000 %}
-                ₹{{ avg_price|floatformat:0 }}
-                {% else %}
-                ₹{{ avg_price|floatformat:0 }}
-                {% endif %}
+                ₹{{ avg_price|floatformat:0|intcomma }}
                 {% else %}—{% endif %}
             </span>
             <span class="label">Avg. Listing Price</span>
@@ -235,7 +230,7 @@
                 {% endif %}
             </div>
             <div class="seller-card-body">
-                <div class="seller-card-price">₹ {{ prop.price }}</div>
+                <div class="seller-card-price">₹ {{ prop.price|intcomma }}</div>
                 <div class="seller-card-title">{{ prop.title }}</div>
                 <div class="seller-card-city"><i class="ph-fill ph-map-pin"></i> {{ prop.city }}, {{ prop.state }}</div>
                 <div class="seller-card-meta">

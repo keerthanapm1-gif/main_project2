@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load humanize %}
 
 {% block title %}My Wishlist | Luxia{% endblock %}
 
@@ -34,7 +35,7 @@
             <div class="property-info" style="padding: 1.5rem;">
                 <div class="property-price"
                     style="font-size: 1.5rem; font-weight: 700; color: var(--primary-color); margin-bottom: 0.5rem;">₹
-                    {{ item.property.price }}</div>
+                    {{ item.property.price|intcomma }}</div>
                 <h3 style="margin: 0 0 0.5rem 0; font-size: 1.25rem;">
                     <a href="{% url 'property_detail' item.property.pk %}"
                         style="color: var(--text-color); text-decoration: none;">{{ item.property.title }}</a>

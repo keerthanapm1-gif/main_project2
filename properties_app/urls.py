@@ -10,6 +10,7 @@ urlpatterns = [
     path('property/<int:property_id>/review/', views.add_review, name='add_review'),
     path('property/<int:property_id>/contact/', views.contact_seller, name='contact_seller'),
     path('about/', views.about, name='about'),
+    path('contact-us/', views.contact_us, name='contact_us'),
     path('login/', views.login_user, name='login'),
     path('register/', views.register_user, name='register'),
     path('logout/', views.logout_user, name='logout'),
@@ -34,7 +35,6 @@ urlpatterns = [
     # Phase 6: Financial & Legal Automation
     path('property/<int:property_id>/lease/', views.lease_generation, name='lease_generation'),
     path('property/<int:property_id>/payment-split/', views.payment_splitter, name='payment_splitter'),
-    path('tax-compliance/', views.tax_compliance, name='tax_compliance'),
     
     # New Housing.com Features
     path('emi-calculator/', views.emi_calculator, name='emi_calculator'),
