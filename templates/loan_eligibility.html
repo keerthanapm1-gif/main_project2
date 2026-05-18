@@ -1,5 +1,6 @@
-﻿{% extends 'base.html' %}
+{% extends 'base.html' %}
 {% load static %}
+{% load custom_filters %}
 
 {% block title %}Home Loan Eligibility Calculator â€“ Luxia Real Estate{% endblock %}
 
@@ -249,13 +250,14 @@
 
 <div class="loan-page">
     <div class="loan-hero">
-        <h1>ðŸ¦ Home Loan Eligibility</h1>
+        <h1>🏦 Home Loan Eligibility</h1>
         <p>Check how much home loan you are eligible for based on your income</p>
     </div>
 
     {% if result %}
     <div class="result-hero">
-        <div class="main-amount">â‚¹ {{ result.max_loan|floatformat:0 }}</div>
+        <div class="main-amount">₹ {{ result.max_loan|indian_rupee }}</div>
+        <div class="main-words" style="font-size: 1.1rem; opacity: 0.9; margin-top: 0.25rem;">(Rupees {{ result.max_loan|indian_words }} Only)</div>
         <div class="main-label">Maximum Loan Amount You're Eligible For</div>
         <div class="eligibility-badge">
             <i class="ph-fill ph-check-circle"></i> Eligible for Home Loan
@@ -264,29 +266,29 @@
 
     <div class="result-grid">
         <div class="result-box">
-            <span class="r-icon">ðŸ </span>
-            <div class="r-amount">â‚¹ {{ result.affordable_property|floatformat:0 }}</div>
+            <span class="r-icon">🏡</span>
+            <div class="r-amount">₹ {{ result.affordable_property|indian_rupee }}</div>
             <div class="r-label">Affordable Property Value</div>
         </div>
         <div class="result-box">
-            <span class="r-icon">ðŸ’µ</span>
-            <div class="r-amount">â‚¹ {{ result.actual_emi|floatformat:0 }}</div>
+            <span class="r-icon">💵</span>
+            <div class="r-amount">₹ {{ result.actual_emi|indian_rupee }}</div>
             <div class="r-label">Estimated Monthly EMI</div>
         </div>
         <div class="result-box">
-            <span class="r-icon">ðŸ’°</span>
-            <div class="r-amount">â‚¹ {{ result.down_payment|floatformat:0 }}</div>
+            <span class="r-icon">💰</span>
+            <div class="r-amount">₹ {{ result.down_payment|indian_rupee }}</div>
             <div class="r-label">Down Payment Required</div>
         </div>
         <div class="result-box">
-            <span class="r-icon">ðŸ“…</span>
+            <span class="r-icon">📅</span>
             <div class="r-amount">{{ result.tenure_years }} yrs</div>
             <div class="r-label">Loan Tenure at {{ result.interest_rate }}% p.a.</div>
         </div>
     </div>
 
     <div class="tips-box" style="margin-bottom:2rem;">
-        <h4>ðŸ’¡ Tips to Increase Your Eligibility</h4>
+        <h4>💡 Tips to Increase Your Eligibility</h4>
         <ul>
             <li>Add a co-applicant (spouse/parent) to nearly double your loan cap</li>
             <li>Clear existing loans or credit card dues before applying</li>
@@ -311,7 +313,7 @@
                 <div class="form-group">
                     <label for="monthly_salary">Net Monthly Salary</label>
                     <div class="input-prefix">
-                        <span>â‚¹</span>
+                        <span>₹</span>
                         <input type="number" id="monthly_salary" name="monthly_salary" min="5000" step="1000"
                             value="{{ request.POST.monthly_salary|default:'' }}" placeholder="e.g. 50000" required>
                     </div>
@@ -351,7 +353,7 @@
     </div>
 
     <div class="tips-box">
-        <h4>â„¹ï¸ How This Calculator Works</h4>
+        <h4>ℹ️ How This Calculator Works</h4>
         <ul>
             <li>Banks typically allow up to <strong>45% of your net salary</strong> as maximum EMI</li>
             <li>Loan amount is calculated using the standard EMI amortization formula</li>

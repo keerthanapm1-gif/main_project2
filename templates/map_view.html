@@ -69,8 +69,59 @@
         background: white;
         border-bottom: 1px solid #e2e8f0;
         flex-wrap: wrap;
+        position: relative;
     }
 
+    .map-controls {
+        position: absolute;
+        right: 2rem;
+        display: flex;
+        gap: 1rem;
+        align-items: center;
+    }
+
+    .toggle-switch {
+        display: flex;
+        background: #f1f5f9;
+        border-radius: 8px;
+        padding: 2px;
+        border: 1px solid #e2e8f0;
+    }
+
+    .toggle-btn {
+        padding: 0.4rem 1rem;
+        font-size: 0.8rem;
+        font-weight: 600;
+        border-radius: 6px;
+        cursor: pointer;
+        transition: all 0.2s;
+        border: none;
+        background: transparent;
+        color: #64748b;
+    }
+
+    .toggle-btn.active {
+        background: white;
+        color: #0f172a;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+
+    .price-legend {
+        display: none;
+        align-items: center;
+        gap: 0.8rem;
+        font-size: 0.85rem;
+        color: #475569;
+    }
+
+    .price-gradient {
+        width: 150px;
+        height: 12px;
+        border-radius: 4px;
+        background: linear-gradient(to right, #22c55e, #eab308, #ef4444);
+    }
+
+    /* Popup custom styles */
     .legend-item {
         display: flex;
         align-items: center;
@@ -138,6 +189,77 @@
         font-weight: 600;
         text-decoration: none;
     }
+
+    /* Nearby Sidebar Styling */
+    .map-container {
+        display: flex;
+        position: relative;
+        overflow: hidden;
+    }
+    #property-map {
+        flex: 1;
+        height: 600px;
+        z-index: 1;
+    }
+    #nearby-sidebar {
+        width: 380px;
+        background: white;
+        border-left: 1px solid #e2e8f0;
+        height: 600px;
+        display: flex;
+        flex-direction: column;
+        transition: transform 0.3s ease;
+    }
+    .sidebar-header {
+        padding: 1.5rem;
+        border-bottom: 1px solid #f1f5f9;
+        background: #f8fafc;
+    }
+    .sidebar-content {
+        flex: 1;
+        overflow-y: auto;
+        padding: 1.5rem;
+    }
+    .nearby-card {
+        display: flex;
+        gap: 1rem;
+        padding: 1rem;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        margin-bottom: 1rem;
+        text-decoration: none;
+        color: inherit;
+        transition: all 0.2s;
+    }
+    .nearby-card:hover {
+        border-color: var(--primary-color);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        transform: translateY(-2px);
+    }
+    .nearby-card img {
+        width: 100px;
+        height: 80px;
+        object-fit: cover;
+        border-radius: 8px;
+    }
+    .nearby-info {
+        flex: 1;
+    }
+    .nearby-info h4 {
+        font-size: 0.9rem;
+        font-weight: 700;
+        margin-bottom: 0.25rem;
+    }
+    .nearby-info .price {
+        color: var(--primary-color);
+        font-weight: 800;
+        font-size: 1rem;
+    }
+    .nearby-info .dist {
+        font-size: 0.75rem;
+        color: #64748b;
+        margin-top: 0.4rem;
+    }
 </style>
 
 <div class="map-header">
@@ -164,27 +286,65 @@
 </div>
 {% else %}
 <div class="map-legend">
-    <span style="font-weight:600;color:#1e293b;font-size:0.9rem;">Status Legend:</span>
-    <div class="legend-item">
-        <div class="legend-dot" style="background:#22c55e;"></div> Available
+    <span style="font-weight:600;color:#1e293b;font-size:0.9rem;">Map Display:</span>
+    
+    <!-- Status Legend (Default) -->
+    <div id="status-legend" style="display:flex; gap:1.5rem; align-items:center;">
+        <div class="legend-item">
+            <div class="legend-dot" style="background:#22c55e;"></div> Available
+        </div>
+        <div class="legend-item">
+            <div class="legend-dot" style="background:#f59e0b;"></div> Rented
+        </div>
+        <div class="legend-item">
+            <div class="legend-dot" style="background:#ef4444;"></div> Sold
+        </div>
     </div>
-    <div class="legend-item">
-        <div class="legend-dot" style="background:#f59e0b;"></div> Rented
+
+    <!-- Price Legend (Visible in Heatmap/Price mode) -->
+    <div id="price-legend" class="price-legend">
+        <span>Cheap Area</span>
+        <div class="price-gradient"></div>
+        <span>Expensive Area</span>
     </div>
-    <div class="legend-item">
-        <div class="legend-dot" style="background:#ef4444;"></div> Sold
+
+    <div class="map-controls">
+        <div class="toggle-switch">
+            <button class="toggle-btn active" id="view-markers" onclick="setMapView('markers')">Status View</button>
+            <button class="toggle-btn" id="view-heatmap" onclick="setMapView('heatmap')">Price Heatmap</button>
+        </div>
     </div>
 </div>
 {% endif %}
 
-<div id="property-map"></div>
+<div class="map-container">
+    <div id="property-map"></div>
+    <div id="nearby-sidebar">
+        <div class="sidebar-header">
+            <h3 style="font-size:1.1rem; font-weight:700; color:#1e293b; display:flex; align-items:center; gap:0.5rem;">
+                <i class="ph-bold ph-map-pin" style="color:var(--primary-color);"></i> Nearby Properties
+            </h3>
+            <p style="font-size:0.8rem; color:#64748b; margin-top:0.25rem;">Click the map anywhere to fetch properties within 10km radius</p>
+        </div>
+        <div class="sidebar-content" id="nearby-results">
+            <div style="text-align:center; margin-top:2rem; color:#94a3b8;">
+                <i class="ph ph-hand-pointing" style="font-size:3rem; opacity:0.3;"></i>
+                <p style="margin-top:1rem;">Click on the map to find<br>amazing properties nearby!</p>
+            </div>
+        </div>
+    </div>
+</div>
 
 <!-- Leaflet CSS & JS -->
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<!-- Leaflet Heatmap Plugin -->
+<script src="https://leaflet.github.io/Leaflet.heat/dist/leaflet-heat.js"></script>
 
 <script>
     const propertiesData = {{ properties_json| safe }};
+    const MIN_PRICE = {{ min_price }};
+    const MAX_PRICE = {{ max_price }};
 
     const map = L.map('property-map', {
         center: [20.5937, 78.9629],
@@ -197,14 +357,22 @@
         maxZoom: 18
     }).addTo(map);
 
-    function getMarkerColor(status) {
+    function getMarkerColor(status, price = null) {
+        if (currentMode === 'heatmap' && price !== null) {
+            // Price based coloring: Green (min) to Red (max)
+            const ratio = (price - MIN_PRICE) / (MAX_PRICE - MIN_PRICE || 1);
+            if (ratio < 0.33) return '#22c55e'; // Cheap
+            if (ratio < 0.66) return '#eab308'; // Mid
+            return '#ef4444'; // expensive
+        }
+        
         if (status === 'Available') return '#22c55e';
         if (status === 'Rented') return '#f59e0b';
         return '#ef4444';
     }
 
-    function createMarkerIcon(status) {
-        const color = getMarkerColor(status);
+    function createMarkerIcon(status, price = null) {
+        const color = getMarkerColor(status, price);
         return L.divIcon({
             className: '',
             html: `<div style="
@@ -224,32 +392,141 @@
         return '₹' + price.toLocaleString('en-IN');
     }
 
-    const bounds = [];
-
-    propertiesData.forEach(p => {
-        const icon = createMarkerIcon(p.status);
-        const marker = L.marker([p.lat, p.lng], { icon }).addTo(map);
-        const imgHtml = p.image_url
-            ? `<img src="${p.image_url}" alt="${p.title}" />`
-            : `<div style="width:100%;height:80px;background:#e2e8f0;border-radius:6px;display:flex;align-items:center;justify-content:center;margin-bottom:0.5rem;color:#94a3b8;font-size:0.75rem;">No Image</div>`;
-        marker.bindPopup(`
-      <div class="popup-card">
-        ${imgHtml}
-        <h4>${p.title}</h4>
-        <div class="popup-city"><i>📍</i> ${p.city}</div>
-        <div class="popup-price">${formatPrice(p.price)}</div>
-        <div class="popup-meta">
-          <span>🛏 ${p.bhk} BHK</span>
-          <span>📐 ${p.sqft} sqft</span>
-        </div>
-        <a href="/property/${p.id}/" class="popup-btn">View Details →</a>
-      </div>
-    `, { maxWidth: 220 });
-        bounds.push([p.lat, p.lng]);
+    const markersLayer = L.layerGroup().addTo(map);
+    const heatmapPoints = propertiesData.map(p => {
+        // [lat, lng, intensity]
+        // Intensity is normalized price (higher price = more "heat")
+        const intensity = (p.price - MIN_PRICE) / (MAX_PRICE - MIN_PRICE || 1);
+        return [p.lat, p.lng, intensity * 0.8 + 0.2]; // Ensure some min intensity
+    });
+    
+    const heatLayer = L.heatLayer(heatmapPoints, {
+        radius: 35,
+        blur: 15,
+        maxZoom: 10,
+        gradient: {0.4: 'green', 0.65: 'yellow', 1: 'red'}
     });
 
-    if (bounds.length > 0) {
-        map.fitBounds(bounds, { padding: [40, 40] });
+    let currentMode = 'markers';
+
+    function renderMarkers() {
+        markersLayer.clearLayers();
+        const bounds = [];
+        propertiesData.forEach(p => {
+            const icon = createMarkerIcon(p.status, p.price);
+            const marker = L.marker([p.lat, p.lng], { icon });
+            
+            const imgHtml = p.image_url
+                ? `<img src="${p.image_url}" alt="${p.title}" />`
+                : `<div style="width:100%;height:80px;background:#e2e8f0;border-radius:6px;display:flex;align-items:center;justify-content:center;margin-bottom:0.5rem;color:#94a3b8;font-size:0.75rem;">No Image</div>`;
+            
+            marker.bindPopup(`
+                <div class="popup-card">
+                    ${imgHtml}
+                    <h4>${p.title}</h4>
+                    <div class="popup-city"><i>📍</i> ${p.city}</div>
+                    <div class="popup-price">${formatPrice(p.price)}</div>
+                    <div class="popup-meta">
+                        <span>🛏 ${p.bhk} BHK</span>
+                        <span>📐 ${p.sqft} sqft</span>
+                    </div>
+                    <a href="/property/${p.id}/" class="popup-btn">View Details →</a>
+                </div>
+            `, { maxWidth: 220 });
+            
+            markersLayer.addLayer(marker);
+            bounds.push([p.lat, p.lng]);
+        });
+        return bounds;
+    }
+
+    function setMapView(mode) {
+        currentMode = mode;
+        
+        // Update UI
+        document.getElementById('view-markers').classList.toggle('active', mode === 'markers');
+        document.getElementById('view-heatmap').classList.toggle('active', mode === 'heatmap');
+        document.getElementById('status-legend').style.display = mode === 'markers' ? 'flex' : 'none';
+        document.getElementById('price-legend').style.display = mode === 'heatmap' ? 'flex' : 'none';
+
+        if (mode === 'markers') {
+            map.removeLayer(heatLayer);
+            renderMarkers();
+        } else {
+            // Price coloring mode + Heatmap
+            map.addLayer(heatLayer);
+            renderMarkers();
+        }
+    }
+
+    // --- Nearby Properties Click Listener ---
+    const resultsContainer = document.getElementById('nearby-results');
+    let clickMarker = null;
+
+    map.on('click', function(e) {
+        const { lat, lng } = e.latlng;
+        
+        // Remove previous click marker
+        if (clickMarker) map.removeLayer(clickMarker);
+        
+        // Add a new blue marker for the click point
+        clickMarker = L.circleMarker([lat, lng], {
+            radius: 8,
+            color: '#3b82f6',
+            fillColor: '#3b82f6',
+            fillOpacity: 0.5,
+            weight: 2
+        }).addTo(map);
+
+        // Clear sidebar and show loading
+        resultsContainer.innerHTML = `
+            <div style="text-align:center; margin-top:3rem;">
+                <div style="width:40px; height:40px; border:4px solid #f3f3f3; border-top:4px solid var(--primary-color); border-radius:50%; animation: spin 1s linear infinite; margin:auto;"></div>
+                <p style="margin-top:1rem; color:#64748b;">Searching 10km radius...</p>
+            </div>
+            <style>@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }</style>
+        `;
+
+        // Fetch nearby properties
+        fetch(`/api/nearby-properties/?lat=${lat}&lng=${lng}&radius=10`)
+            .then(res => res.json())
+            .then(data => {
+                if (data.count === 0) {
+                    resultsContainer.innerHTML = `
+                        <div style="text-align:center; margin-top:2rem; color:#94a3b8;">
+                            <i class="ph ph-magnifying-glass" style="font-size:3rem; opacity:0.3;"></i>
+                            <p style="margin-top:1rem;">No properties found in this area.<br>Try clicking elsewhere!</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                let html = `<p style="font-size:0.85rem; color:#475569; margin-bottom:1rem;">Found <b>${data.count}</b> properties:</p>`;
+                data.properties.forEach(p => {
+                    html += `
+                        <a href="${p.url}" class="nearby-card">
+                            ${p.image_url ? `<img src="${p.image_url}" alt="${p.title}">` : '<div style="width:100px; height:80px; background:#f1f5f9; display:flex; align-items:center; justify-content:center; border-radius:8px;"><i class="ph ph-image" style="font-size:1.5rem; color:#cbd5e1;"></i></div>'}
+                            <div class="nearby-info">
+                                <h4>${p.title}</h4>
+                                <div class="price">${p.formatted_price}</div>
+                                <div style="font-size:0.75rem; color:#64748b;">${p.bhk} BHK • ${p.property_type}</div>
+                                <div class="dist">📍 ${p.distance} km away</div>
+                            </div>
+                        </a>
+                    `;
+                });
+                resultsContainer.innerHTML = html;
+            })
+            .catch(err => {
+                console.error(err);
+                resultsContainer.innerHTML = `<p style="color:#ef4444; text-align:center;">Error fetching data. Please try again.</p>`;
+            });
+    });
+
+    // Initial render
+    const initialBounds = renderMarkers();
+    if (initialBounds.length > 0) {
+        map.fitBounds(initialBounds, { padding: [40, 40] });
     }
 </script>
 {% endblock %}

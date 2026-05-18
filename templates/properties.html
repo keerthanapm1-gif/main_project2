@@ -132,6 +132,10 @@
                     <a href="{% url 'property_detail' property.id %}" style="text-decoration:none; color:inherit;">
                         <div class="property-img">
                             <div class="property-badge">{{ property.get_status_display }}</div>
+                            <button class="wishlist-toggle-btn" data-url="{% url 'toggle_wishlist' property.id %}"
+                                style="position: absolute; top: 10px; right: 10px; background: white; border: none; border-radius: 50%; width: 32px; height: 32px; cursor: pointer; z-index: 10; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 5px rgba(0,0,0,0.2);" onclick="event.preventDefault(); toggleWishlist(this);">
+                                <i class="{% if property.id in wishlisted_property_ids %}ph-fill{% else %}ph{% endif %} ph-heart" style="color: var(--primary-color);"></i>
+                            </button>
                             {% if property.image %}
                             <img src="{{ property.image.url }}" alt="{{ property.title }}">
                             {% else %}
@@ -295,6 +299,35 @@
 
     // Initial load
     document.addEventListener('DOMContentLoaded', updateComparisonBar);
+
+    // Wishlist Toggle Function
+    function toggleWishlist(btn) {
+        const url = btn.getAttribute('data-url');
+        fetch(url, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}',
+            }
+        })
+        .then(response => {
+            if (!response.ok) {
+                window.location.href = "{% url 'login' %}?next={{ request.path }}";
+                throw new Error("Not logged in");
+            }
+            return response.json();
+        })
+        .then(data => {
+            const icon = btn.querySelector('i');
+            if (data.status === 'added') {
+                icon.classList.remove('ph');
+                icon.classList.add('ph-fill');
+            } else if (data.status === 'removed') {
+                icon.classList.remove('ph-fill');
+                icon.classList.add('ph');
+            }
+        })
+        .catch(error => console.error('Error:', error));
+    }
 </script>
 
 {% endblock %}

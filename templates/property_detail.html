@@ -14,7 +14,16 @@
                 <div class="property-address" style="font-size: 1.1rem;"><i class="ph-fill ph-map-pin"></i> {{ property.address }}, {{ property.city }}, {{ property.state }}</div>
             </div>
             <div style="text-align: right;">
-                <div class="property-price" style="font-size: 2.5rem; margin-bottom: 0.5rem;">₹ {{ property.price|intcomma }}</div>
+                <div style="display: flex; align-items: center; justify-content: flex-end; gap: 1rem; margin-bottom: 0.5rem;">
+                    <button id="wishlist-btn" data-url="{% url 'toggle_wishlist' property.id %}" style="background: none; border: none; cursor: pointer; font-size: 2.5rem; padding: 0; display: flex; align-items: center;" title="Add to Wishlist">
+                        {% if in_wishlist %}
+                        <i class="ph-fill ph-heart" style="color: var(--primary-color);"></i>
+                        {% else %}
+                        <i class="ph ph-heart" style="color: var(--primary-color);"></i>
+                        {% endif %}
+                    </button>
+                    <div class="property-price" style="font-size: 2.5rem;">₹ {{ property.price|intcomma }}</div>
+                </div>
                 <label
                     style="display:flex; align-items:center; gap:0.5rem; font-size:1rem; color:var(--text-muted); cursor:pointer;"
                     onclick="toggleCompare('{{ property.id }}', '{{ property.title }}')">
@@ -90,6 +99,18 @@
                     Your browser does not support the video tag.
                 </video>
                 {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        {% if property.floor_plan %}
+        <div class="floor-plan-section" style="margin-top: 25px; background: #fff; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); border: 1px solid #e2e8f0;">
+            <h3 style="display: flex; align-items: center; gap: 0.5rem; margin-top: 0; color: #1e293b;">
+                <i class="ph-fill ph-blueprint" style="color: var(--primary-color); font-size: 1.5rem;"></i>
+                Floor Plan
+            </h3>
+            <div style="border-radius: 8px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.1); background: #f8fafc; text-align: center; padding: 10px;">
+                <img src="{{ property.floor_plan.url }}" alt="Floor Plan for {{ property.title }}" style="max-width: 100%; height: auto; border-radius: 4px;">
             </div>
         </div>
         {% endif %}
@@ -345,7 +366,52 @@
             {% endif %}
         </div>
 
-        <div class="detail-card">
+        {% if property.agent_name %}
+        <div class="detail-card" style="margin-top: 1.5rem;">
+            <h3>Contact Agent</h3>
+            <div class="agent-info" style="display: flex; justify-content: space-between; align-items: center;">
+                <div style="display: flex; gap: 1rem; align-items: center;">
+                    <div class="seller-avatar" style="background-color: #1e293b;">{{ property.agent_name|make_list|first }}</div>
+                    <div>
+                        <div style="font-weight: 600; font-size: 1.125rem;">{{ property.agent_name }}</div>
+                        <div style="color: var(--text-muted); font-size: 0.875rem;">Real Estate Agent</div>
+                    </div>
+                </div>
+                <div style="display: flex; gap: 0.5rem;">
+                    {% if property.agent_phone %}
+                    <a href="https://wa.me/{{ property.agent_phone }}" target="_blank" class="btn btn-secondary"
+                        style="padding: 0.5rem; display: flex; align-items: center; justify-content: center; border-radius: 50%; width: 40px; height: 40px; background-color: #25D366; color: white; border: none;"
+                        title="WhatsApp Agent">
+                        <i class="ph-fill ph-whatsapp-logo" style="font-size: 1.5rem;"></i>
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div style="margin-top: 1.5rem;">
+                <form method="POST" action="{% url 'contact_seller' property.id %}">
+                    {% csrf_token %}
+                    <div style="margin-bottom: 1rem;">
+                        <input type="text" name="name" class="form-input" placeholder="Your Name" required>
+                    </div>
+                    <div style="margin-bottom: 1rem;">
+                        <input type="email" name="email" class="form-input" placeholder="Your Email" required>
+                    </div>
+                    <div style="margin-bottom: 1rem;">
+                        <input type="text" name="phone" class="form-input" placeholder="Your Phone" required>
+                    </div>
+                    <div style="margin-bottom: 1rem;">
+                        <textarea name="message" class="form-input" rows="3" placeholder="I am interested..."
+                            required></textarea>
+                    </div>
+                    <input type="hidden" name="inquiry_type" value="whatsapp">
+                    <button type="submit" class="btn btn-primary" style="width: 100%; background-color: #1e293b; border: none;">Send Inquiry to Agent</button>
+                </form>
+            </div>
+        </div>
+        {% endif %}
+
+        <div class="detail-card" style="margin-top: 1.5rem;">
             <h3 style="display:flex; align-items:center; gap:0.5rem;">
                 <i class="ph-fill ph-map-pin-line" style="color:var(--primary-color);"></i> Locality Insights
             </h3>

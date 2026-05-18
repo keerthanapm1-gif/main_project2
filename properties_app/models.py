@@ -56,11 +56,17 @@ class Property(models.Model):
     # Images
     image = models.ImageField(upload_to='property_images/', null=True, blank=True)
     virtual_tour_url = models.URLField(max_length=500, blank=True, null=True, help_text="Link to 360 Virtual Tour or Video")
+    floor_plan = models.ImageField(upload_to='floor_plans/', null=True, blank=True, help_text="Property Floor Plan")
     
     # Seller Details
     seller_name = models.CharField(max_length=150)
     seller_phone = models.CharField(max_length=20)
     seller_email = models.EmailField()
+
+    # Agent Details
+    agent_name = models.CharField(max_length=150, blank=True, null=True)
+    agent_phone = models.CharField(max_length=20, blank=True, null=True)
+    agent_email = models.EmailField(blank=True, null=True)
 
     # New Filters (Feature 3)
     FURNISHED_CHOICES = [
@@ -273,3 +279,44 @@ class SavedSearch(models.Model):
         if self.max_price:
             params.append(f"max_price={int(self.max_price)}")
         return "/properties/?" + "&".join(params) if params else "/properties/"
+
+from django.db.models.signals import post_save
+from django.dispatch import receiver
+
+class UserProfile(models.Model):
+    ROLE_CHOICES = (
+        ('admin', 'Admin'),
+        ('agent', 'Agent'),
+        ('user', 'User'),
+    )
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
+    role = models.CharField(max_length=10, choices=ROLE_CHOICES, default='user')
+
+    def __str__(self):
+        return f"{self.user.username} - {self.get_role_display()}"
+
+@receiver(post_save, sender=User)
+def create_or_update_user_profile(sender, instance, created, **kwargs):
+    """
+    Ensure each user has a profile.
+    Uses get_or_create to handles cases where existing users might not have a profile.
+    """
+    if created:
+        UserProfile.objects.get_or_create(user=instance)
+    else:
+        # Use get_or_create to ensure the profile exists before saving
+        profile, _ = UserProfile.objects.get_or_create(user=instance)
+        profile.save()
+
+class RecentlyViewed(models.Model):
+    user = models.ForeignKey(User, related_name='recently_viewed', on_delete=models.CASCADE)
+    property = models.ForeignKey(Property, on_delete=models.CASCADE)
+    viewed_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-viewed_at']
+        unique_together = ('user', 'property')
+
+    def __str__(self):
+        return f"{self.user.username} viewed {self.property.title}"
+

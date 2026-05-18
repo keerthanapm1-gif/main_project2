@@ -35,6 +35,8 @@ urlpatterns = [
     # Phase 6: Financial & Legal Automation
     path('property/<int:property_id>/lease/', views.lease_generation, name='lease_generation'),
     path('property/<int:property_id>/payment-split/', views.payment_splitter, name='payment_splitter'),
+    path('mock-payment/', views.mock_payment_gateway, name='mock_payment_gateway'),
+    path('process-payment/', views.process_online_payment, name='process_online_payment'),
     
     # New Housing.com Features
     path('emi-calculator/', views.emi_calculator, name='emi_calculator'),
@@ -47,4 +49,16 @@ urlpatterns = [
     path('save-search/', views.save_search, name='save_search'),
     path('saved-searches/', views.saved_searches, name='saved_searches'),
     path('loan-eligibility/', views.loan_eligibility, name='loan_eligibility'),
+    path('recommended/', views.personalized_recommendations, name='personalized_recommendations'),
+    
+
+    path('api/nearby-properties/', views.api_nearby_properties, name='api_nearby_properties'),
+
+    # Location Intelligence
+    path('location-intelligence/', views.location_intelligence, name='location_intelligence'),
+    path('api/location-intelligence/', views.api_location_intelligence, name='api_location_intelligence'),
+
+    # Smart Recommendation Engine
+    path('smart-recommendation/', views.smart_recommendation, name='smart_recommendation'),
+    path('api/smart-recommendation/', views.api_smart_recommendation, name='api_smart_recommendation'),
 ]

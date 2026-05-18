@@ -26,7 +26,8 @@
             <a href="{% url 'map_view' %}"><i class="ph ph-map-trifold"></i> Map View</a>
             <a href="{% url 'emi_calculator' %}">EMI Calc</a>
             <a href="{% url 'loan_eligibility' %}">Loan Check</a>
-            <a href="{% url 'price_estimator' %}">Price AI</a>
+            <a href="{% url 'price_estimator' %}">Price Check</a>
+
             {% if user.is_authenticated %}
             <a href="{% url 'saved_searches' %}"><i class="ph ph-bell"></i> Alerts</a>
             <a href="{% url 'post_property' %}" class="btn btn-primary"
@@ -112,9 +113,47 @@
             <i class="ph-fill ph-robot" style="font-size: 2rem;"></i>
         </button>
 
+        <style>
+            .chatbot-property-card {
+                background: white;
+                border: 1px solid #e2e8f0;
+                border-radius: 8px;
+                overflow: hidden;
+                margin-top: 0.5rem;
+                display: flex;
+                flex-direction: column;
+                transition: transform 0.2s;
+                text-decoration: none;
+                color: inherit;
+            }
+            .chatbot-property-card:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            }
+            .chatbot-property-card img {
+                width: 100%;
+                height: 100px;
+                object-fit: cover;
+            }
+            .chatbot-property-card .card-content {
+                padding: 0.5rem;
+            }
+            .chatbot-property-card .price {
+                color: var(--primary-color);
+                font-weight: 700;
+                font-size: 0.9rem;
+            }
+            .chatbot-property-card .title {
+                font-weight: 600;
+                font-size: 0.8rem;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+        </style>
         <!-- Chatbot Window (Hidden by default) -->
         <div id="chatbot-window"
-            style="display: none; position: absolute; bottom: 80px; right: 0; width: 350px; height: 450px; background: white; border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.15); flex-direction: column; overflow: hidden; border: 1px solid #e2e8f0;">
+            style="display: none; position: absolute; bottom: 80px; right: 0; width: 350px; height: 480px; background: white; border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.15); flex-direction: column; overflow: hidden; border: 1px solid #e2e8f0;">
             <!-- Header -->
             <div
                 style="background: var(--primary-color); color: white; padding: 1rem; display: flex; align-items: center; justify-content: space-between;">
@@ -133,7 +172,7 @@
                 <!-- Initial Bot Message -->
                 <div
                     style="align-self: flex-start; max-width: 80%; background: white; padding: 0.75rem 1rem; border-radius: 0 12px 12px 12px; border: 1px solid #e2e8f0; font-size: 0.9rem; color: var(--text-color);">
-                    Hi there! I'm the Luxia Assistant. Try asking me about 'price', 'location', 'rent', or 'contact'.
+                    Hi there! I'm the Luxia Assistant. Try asking me for 'houses under 50 lakhs' or 'areas near IT parks'.
                 </div>
             </div>
 
@@ -174,19 +213,28 @@
                 window.style.display = 'none';
             });
 
-            function appendMessage(text, isUser) {
+            function appendMessage(text, isUser, properties = null) {
+                const msgWrapper = document.createElement('div');
+                msgWrapper.style.maxWidth = '80%';
+                msgWrapper.style.display = 'flex';
+                msgWrapper.style.flexDirection = 'column';
+                msgWrapper.style.gap = '0.5rem';
+
+                if (isUser) {
+                    msgWrapper.style.alignSelf = 'flex-end';
+                } else {
+                    msgWrapper.style.alignSelf = 'flex-start';
+                }
+
                 const msgDiv = document.createElement('div');
-                msgDiv.style.maxWidth = '80%';
                 msgDiv.style.padding = '0.75rem 1rem';
                 msgDiv.style.fontSize = '0.9rem';
 
                 if (isUser) {
-                    msgDiv.style.alignSelf = 'flex-end';
                     msgDiv.style.background = 'var(--primary-color)';
                     msgDiv.style.color = 'white';
                     msgDiv.style.borderRadius = '12px 12px 0 12px';
                 } else {
-                    msgDiv.style.alignSelf = 'flex-start';
                     msgDiv.style.background = 'white';
                     msgDiv.style.color = 'var(--text-color)';
                     msgDiv.style.borderRadius = '0 12px 12px 12px';
@@ -194,7 +242,27 @@
                 }
 
                 msgDiv.textContent = text;
-                messagesContainer.appendChild(msgDiv);
+                msgWrapper.appendChild(msgDiv);
+
+                if (properties && properties.length > 0) {
+                    properties.forEach(p => {
+                        const card = document.createElement('a');
+                        card.href = p.url;
+                        card.className = 'chatbot-property-card';
+                        card.innerHTML = `
+                            ${p.image ? `<img src="${p.image}" alt="${p.title}">` : '<div style="height:100px; background:#e2e8f0; display:flex; align-items:center; justify-content:center;"><i class="ph ph-image" style="font-size:2rem; color:#94a3b8;"></i></div>'}
+                            <div class="card-content">
+                                <div class="price">${p.price}</div>
+                                <div class="title">${p.title}</div>
+                                <div style="font-size:0.75rem; font-weight:600; color:var(--primary-color); margin-top:2px;">${p.bhk} BHK • ${p.property_type}</div>
+                                <div style="font-size:0.7rem; color:#64748b; margin-top:2px;"><i class="ph ph-map-pin"></i> ${p.city}</div>
+                            </div>
+                        `;
+                        msgWrapper.appendChild(card);
+                    });
+                }
+
+                messagesContainer.appendChild(msgWrapper);
                 messagesContainer.scrollTop = messagesContainer.scrollHeight;
             }
 
@@ -208,30 +276,37 @@
                 appendMessage(message, true);
                 input.value = '';
 
-                // Append typing indicator temporarily (optional, keeping it simple here)
+                // Append typing indicator (simple text)
+                const typingId = 'typing-' + Date.now();
+                const typingMsg = document.createElement('div');
+                typingMsg.id = typingId;
+                typingMsg.style.alignSelf = 'flex-start';
+                typingMsg.style.fontSize = '0.8rem';
+                typingMsg.style.color = '#94a3b8';
+                typingMsg.style.padding = '0 1rem';
+                typingMsg.textContent = 'Luxia is typing...';
+                messagesContainer.appendChild(typingMsg);
 
                 // Send to backend
                 const formData = new FormData();
                 formData.append('message', message);
 
-                // In base.html we need a robust way to get csrf, assuming from form
                 const csrfToken = form.querySelector('[name=csrfmiddlewaretoken]').value;
 
-                // Use absolute path for API to work on any page
                 fetch('/api/chatbot/', {
                     method: 'POST',
-                    headers: {
-                        'X-CSRFToken': csrfToken
-                    },
+                    headers: { 'X-CSRFToken': csrfToken },
                     body: formData
                 })
                     .then(response => response.json())
                     .then(data => {
+                        document.getElementById(typingId)?.remove();
                         if (data.response) {
-                            appendMessage(data.response, false);
+                            appendMessage(data.response, false, data.properties);
                         }
                     })
                     .catch(error => {
+                        document.getElementById(typingId)?.remove();
                         console.error('Chatbot error:', error);
                         appendMessage("Sorry, I'm having trouble connecting right now.", false);
                     });

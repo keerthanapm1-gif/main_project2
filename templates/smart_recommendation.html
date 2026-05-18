@@ -1,0 +1,273 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Smart Recommendations | Luxia{% endblock %}
+
+{% block content %}
+<div class="container" style="padding-top: 4rem; padding-bottom: 4rem;">
+    <div style="text-align: center; margin-bottom: 3rem;">
+        <h1 style="font-size: 2.5rem; font-weight: 700; margin-bottom: 1rem;"><i class="ph-fill ph-brain"
+                style="color: var(--primary-color);"></i> Smart Recommendation Engine</h1>
+        <p style="color: var(--text-muted); font-size: 1.125rem; max-width: 600px; margin: 0 auto;">Tell us a bit about your lifestyle, and our AI will find the perfect homes tailored to your unique needs.</p>
+    </div>
+
+    <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 2rem;">
+        <!-- Filter Form Sidebar -->
+        <div style="background: white; padding: 2rem; border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); height: fit-content; position: sticky; top: 100px;">
+            <form id="smart-recommendation-form">
+                
+                <!-- Budget -->
+                <div style="margin-bottom: 2rem;">
+                    <label for="budget" style="display: flex; justify-content: space-between; font-weight: 600; margin-bottom: 0.5rem;">
+                        <span>Max Budget</span>
+                        <span id="budget-val" style="color: var(--primary-color); font-weight: 700;">₹ 50 Lac</span>
+                    </label>
+                    <input type="range" id="budget" name="budget" min="1000000" max="50000000" step="1000000" value="5000000" style="width: 100%;" 
+                        oninput="formatBudget(this.value)">
+                </div>
+
+                <!-- Lifestyle -->
+                <div style="margin-bottom: 2rem;">
+                    <label style="display: block; font-weight: 600; margin-bottom: 1rem;">Lifestyle</label>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                        <label class="radio-card">
+                            <input type="radio" name="lifestyle" value="student" required>
+                            <div class="card-content">
+                                <i class="ph ph-graduation-cap"></i>
+                                <span>Student/PG</span>
+                            </div>
+                        </label>
+                        <label class="radio-card">
+                            <input type="radio" name="lifestyle" value="minimalist" checked>
+                            <div class="card-content">
+                                <i class="ph ph-leaf"></i>
+                                <span>Minimalist</span>
+                            </div>
+                        </label>
+                        <label class="radio-card">
+                            <input type="radio" name="lifestyle" value="family">
+                            <div class="card-content">
+                                <i class="ph ph-users-three"></i>
+                                <span>Family</span>
+                            </div>
+                        </label>
+                        <label class="radio-card">
+                            <input type="radio" name="lifestyle" value="luxury">
+                            <div class="card-content">
+                                <i class="ph ph-crown"></i>
+                                <span>Luxury</span>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Family Size -->
+                <div style="margin-bottom: 2rem;">
+                    <label style="display: block; font-weight: 600; margin-bottom: 1rem;">Family Size</label>
+                    <div style="display: flex; gap: 0.5rem;">
+                        <label class="pill-radio">
+                            <input type="radio" name="family_size" value="1" checked>
+                            <span>1</span>
+                        </label>
+                        <label class="pill-radio">
+                            <input type="radio" name="family_size" value="2">
+                            <span>2-3</span>
+                        </label>
+                        <label class="pill-radio">
+                            <input type="radio" name="family_size" value="4">
+                            <span>4+</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Commute -->
+                <div style="margin-bottom: 2rem;">
+                    <label for="commute" style="display: flex; justify-content: space-between; font-weight: 600; margin-bottom: 0.5rem;">
+                        <span>Max Commute Distance</span>
+                        <span id="commute-val" style="color: var(--primary-color); font-weight: 700;">5 km</span>
+                    </label>
+                    <input type="range" id="commute" name="commute" min="1" max="50" step="1" value="5" style="width: 100%;" 
+                        oninput="document.getElementById('commute-val').innerText = this.value + ' km'">
+                </div>
+
+                <button type="submit" class="btn btn-primary" style="width: 100%; padding: 1rem; justify-content: center; font-size: 1.1rem;">
+                    <i class="ph-fill ph-magic-wand"></i> Find My Match
+                </button>
+            </form>
+        </div>
+
+        <!-- Results Section -->
+        <div>
+            <!-- Loading Spinner -->
+            <div id="loading" style="display: none; text-align: center; padding: 4rem 0;">
+                <i class="ph ph-spinner ph-spin" style="font-size: 3rem; color: var(--primary-color);"></i>
+                <p style="color: var(--text-muted); margin-top: 1rem; font-size: 1.1rem;">Searching our database...</p>
+            </div>
+
+            <!-- Empty State -->
+            <div id="empty-state" style="text-align: center; padding: 4rem 0; background: white; border-radius: 16px; border: 2px dashed #e2e8f0;">
+                <i class="ph ph-magnifying-glass" style="font-size: 4rem; color: #cbd5e1; margin-bottom: 1rem;"></i>
+                <h3 style="margin-bottom: 0.5rem;">Ready to find your match</h3>
+                <p style="color: var(--text-muted);">Adjust your preferences on the left and click "Find My Match".</p>
+            </div>
+
+            <!-- Results Grid -->
+            <div id="results-container" style="display: none;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                    <h3 style="font-size: 1.5rem; margin: 0;">Perfect Matches</h3>
+                    <span id="results-count" style="background: #f1f5f9; padding: 0.25rem 0.75rem; border-radius: 20px; font-size: 0.875rem; font-weight: 600; color: #475569;">0 found</span>
+                </div>
+                
+                <div id="results-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1.5rem;">
+                    <!-- Cards injected here -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Radio Card Styles */
+    .radio-card input[type="radio"] { display: none; }
+    .radio-card .card-content {
+        border: 2px solid #e2e8f0;
+        border-radius: 12px;
+        padding: 1rem 0.5rem;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.2s;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.5rem;
+        color: #64748b;
+    }
+    .radio-card .card-content i { font-size: 1.5rem; }
+    .radio-card input[type="radio"]:checked + .card-content {
+        border-color: var(--primary-color);
+        background: #f0fdf4;
+        color: var(--primary-color);
+        box-shadow: 0 4px 6px -1px rgba(16, 185, 129, 0.1);
+    }
+    
+    /* Pill Radio Styles */
+    .pill-radio input[type="radio"] { display: none; }
+    .pill-radio span {
+        display: inline-block;
+        padding: 0.5rem 1.5rem;
+        border: 2px solid #e2e8f0;
+        border-radius: 50px;
+        cursor: pointer;
+        transition: all 0.2s;
+        font-weight: 600;
+        color: #64748b;
+    }
+    .pill-radio input[type="radio"]:checked + span {
+        border-color: var(--primary-color);
+        background: var(--primary-color);
+        color: white;
+    }
+</style>
+
+<script>
+    function formatBudget(value) {
+        let val = parseFloat(value);
+        let formatted = "";
+        if (val >= 10000000) {
+            formatted = "₹ " + (val / 10000000).toFixed(2) + " Cr";
+        } else if (val >= 100000) {
+            formatted = "₹ " + (val / 100000).toFixed(0) + " Lac";
+        } else {
+            formatted = "₹ " + val.toLocaleString();
+        }
+        document.getElementById('budget-val').innerText = formatted;
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        // Initial format
+        formatBudget(document.getElementById('budget').value);
+
+        const form = document.getElementById('smart-recommendation-form');
+        const emptyState = document.getElementById('empty-state');
+        const loading = document.getElementById('loading');
+        const resultsContainer = document.getElementById('results-container');
+        const resultsGrid = document.getElementById('results-grid');
+        const resultsCount = document.getElementById('results-count');
+
+        form.addEventListener('submit', (e) => {
+            e.preventDefault();
+
+            emptyState.style.display = 'none';
+            resultsContainer.style.display = 'none';
+            loading.style.display = 'block';
+
+            const budget = document.getElementById('budget').value;
+            const lifestyle = document.querySelector('input[name="lifestyle"]:checked').value;
+            const family_size = document.querySelector('input[name="family_size"]:checked').value;
+            const commute = document.getElementById('commute').value;
+
+            const params = new URLSearchParams({
+                budget: budget,
+                lifestyle: lifestyle,
+                family_size: family_size,
+                commute: commute
+            }).toString();
+
+            fetch(`/api/smart-recommendation/?${params}`)
+                .then(res => res.json())
+                .then(data => {
+                    loading.style.display = 'none';
+                    if (data.error) {
+                        alert(data.error);
+                        emptyState.style.display = 'block';
+                    } else {
+                        resultsGrid.innerHTML = '';
+                        resultsCount.textContent = `${data.recommendations.length} found`;
+
+                        if (data.recommendations.length === 0) {
+                            resultsGrid.innerHTML = `
+                                <div style="grid-column: 1 / -1; text-align: center; padding: 3rem; background: #f8fafc; border-radius: 12px;">
+                                    <p style="color: #64748b;">No exact matches found. Try adjusting your budget or commute distance.</p>
+                                </div>
+                            `;
+                        } else {
+                            data.recommendations.forEach(prop => {
+                                const card = `
+                                    <a href="/property/${prop.id}/" style="text-decoration:none; color:inherit;">
+                                        <div style="border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; background: white; transition: transform 0.2s, box-shadow 0.2s;" 
+                                            onmouseover="this.style.transform='translateY(-5px)'; this.style.boxShadow='0 10px 15px -3px rgba(0,0,0,0.1)'" 
+                                            onmouseout="this.style.transform='none'; this.style.boxShadow='none'">
+                                            <div style="height: 180px; position: relative;">
+                                                <div style="position: absolute; top: 10px; left: 10px; background: rgba(0,0,0,0.7); color: white; padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.75rem; font-weight: 600; z-index: 2;">
+                                                    <i class="ph-fill ph-star" style="color: #fbbf24;"></i> ${prop.property_type_display}
+                                                </div>
+                                                <img src="${prop.image_url}" style="width: 100%; height: 100%; object-fit: cover;">
+                                            </div>
+                                            <div style="padding: 1rem;">
+                                                <p style="color: var(--primary-color); font-size: 1.25rem; font-weight: 700; margin-bottom: 0.25rem;">${prop.formatted_price}</p>
+                                                <h4 style="font-size: 1.1rem; margin-bottom: 0.5rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${prop.title}</h4>
+                                                <div style="display: flex; gap: 1rem; color: #64748b; font-size: 0.85rem; margin-bottom: 0.75rem;">
+                                                    <span><i class="ph-fill ph-bed"></i> ${prop.bhk} BHK</span>
+                                                    <span><i class="ph-fill ph-square-logo"></i> ${prop.sqft} Sq.Ft.</span>
+                                                </div>
+                                                <div style="color: #94a3b8; font-size: 0.85rem;"><i class="ph-fill ph-map-pin"></i> ${prop.city}, ${prop.state}</div>
+                                            </div>
+                                        </div>
+                                    </a>
+                                `;
+                                resultsGrid.innerHTML += card;
+                            });
+                        }
+                        resultsContainer.style.display = 'block';
+                    }
+                })
+                .catch(err => {
+                    loading.style.display = 'none';
+                    emptyState.style.display = 'block';
+                    console.error(err);
+                    alert("An error occurred fetching recommendations.");
+                });
+        });
+    });
+</script>
+{% endblock %}

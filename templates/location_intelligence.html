@@ -1,0 +1,193 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Location Intelligence | Luxia{% endblock %}
+
+{% block content %}
+<div class="container" style="padding-top: 4rem; padding-bottom: 4rem;">
+    <div style="text-align: center; margin-bottom: 3rem;">
+        <h1 style="font-size: 2.5rem; font-weight: 700; margin-bottom: 1rem;"><i class="ph-fill ph-map-pin-line"
+                style="color: var(--primary-color);"></i> Location Intelligence</h1>
+        <p style="color: var(--text-muted); font-size: 1.125rem; max-width: 600px; margin: 0 auto;">Estimate property value dynamically based on neighborhood factors like schools, hospitals, traffic, and pollution.</p>
+    </div>
+
+    <div
+        style="max-width: 800px; margin: 0 auto; background: white; padding: 2.5rem; border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.05);">
+        <form id="location-intelligence-form">
+            <h3 style="margin-bottom: 1.5rem; border-bottom: 1px solid #e2e8f0; padding-bottom: 0.5rem;">Property Details</h3>
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1.5rem; margin-bottom: 2rem;">
+                <div>
+                    <label for="city" style="display: block; font-weight: 600; margin-bottom: 0.5rem;">City</label>
+                    <input type="text" id="city" name="city" required placeholder="e.g. Mumbai"
+                        style="width: 100%; padding: 0.75rem 1rem; border: 1px solid #cbd5e1; border-radius: 8px; outline: none; transition: border-color 0.2s;">
+                </div>
+                <div>
+                    <label for="bhk" style="display: block; font-weight: 600; margin-bottom: 0.5rem;">BHK</label>
+                    <select id="bhk" name="bhk" required
+                        style="width: 100%; padding: 0.75rem 1rem; border: 1px solid #cbd5e1; border-radius: 8px; outline: none; background: white;">
+                        <option value="1">1 BHK</option>
+                        <option value="2" selected>2 BHK</option>
+                        <option value="3">3 BHK</option>
+                        <option value="4">4+ BHK</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="area" style="display: block; font-weight: 600; margin-bottom: 0.5rem;">Area (Sq.Ft)</label>
+                    <input type="number" id="area" name="area" required min="100" placeholder="e.g. 1200"
+                        style="width: 100%; padding: 0.75rem 1rem; border: 1px solid #cbd5e1; border-radius: 8px; outline: none;">
+                </div>
+            </div>
+
+            <h3 style="margin-bottom: 1.5rem; border-bottom: 1px solid #e2e8f0; padding-bottom: 0.5rem;">Neighborhood Factors</h3>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem;">
+                <div>
+                    <label for="schools" style="display: flex; justify-content: space-between; font-weight: 600; margin-bottom: 0.5rem;">
+                        <span><i class="ph-fill ph-student" style="color: #64748b;"></i> Nearby Schools</span>
+                        <span id="schools-val" style="color: var(--primary-color);">0</span>
+                    </label>
+                    <input type="range" id="schools" name="schools" min="0" max="10" value="0" style="width: 100%;" oninput="document.getElementById('schools-val').innerText = this.value">
+                </div>
+                <div>
+                    <label for="hospitals" style="display: flex; justify-content: space-between; font-weight: 600; margin-bottom: 0.5rem;">
+                        <span><i class="ph-fill ph-first-aid" style="color: #64748b;"></i> Nearby Hospitals</span>
+                        <span id="hospitals-val" style="color: var(--primary-color);">0</span>
+                    </label>
+                    <input type="range" id="hospitals" name="hospitals" min="0" max="5" value="0" style="width: 100%;" oninput="document.getElementById('hospitals-val').innerText = this.value">
+                </div>
+                <div>
+                    <label for="metro_distance" style="display: flex; justify-content: space-between; font-weight: 600; margin-bottom: 0.5rem;">
+                        <span><i class="ph-fill ph-train" style="color: #64748b;"></i> Metro Distance</span>
+                        <span id="metro-val" style="color: var(--primary-color);">5 km</span>
+                    </label>
+                    <input type="range" id="metro_distance" name="metro_distance" min="0" max="20" step="0.5" value="5" style="width: 100%;" oninput="document.getElementById('metro-val').innerText = this.value + ' km'">
+                </div>
+                <div>
+                    <label for="traffic" style="display: block; font-weight: 600; margin-bottom: 0.5rem;"><i class="ph-fill ph-car-profile" style="color: #64748b;"></i> Traffic Level</label>
+                    <select id="traffic" name="traffic"
+                        style="width: 100%; padding: 0.75rem 1rem; border: 1px solid #cbd5e1; border-radius: 8px; outline: none; background: white;">
+                        <option value="low">Low</option>
+                        <option value="medium" selected>Medium</option>
+                        <option value="high">High (-)</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="crime" style="display: block; font-weight: 600; margin-bottom: 0.5rem;"><i class="ph-fill ph-shield-warning" style="color: #64748b;"></i> Crime Rate</label>
+                    <select id="crime" name="crime"
+                        style="width: 100%; padding: 0.75rem 1rem; border: 1px solid #cbd5e1; border-radius: 8px; outline: none; background: white;">
+                        <option value="low" selected>Low (+)</option>
+                        <option value="medium">Medium</option>
+                        <option value="high">High (-)</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="pollution" style="display: block; font-weight: 600; margin-bottom: 0.5rem;"><i class="ph-fill ph-cloud-fog" style="color: #64748b;"></i> Pollution Index</label>
+                    <select id="pollution" name="pollution"
+                        style="width: 100%; padding: 0.75rem 1rem; border: 1px solid #cbd5e1; border-radius: 8px; outline: none; background: white;">
+                        <option value="good">Good (+)</option>
+                        <option value="moderate" selected>Moderate</option>
+                        <option value="poor">Poor (-)</option>
+                        <option value="hazardous">Hazardous (--)</option>
+                    </select>
+                </div>
+            </div>
+
+            <button type="submit" class="btn btn-primary"
+                style="width: 100%; padding: 1rem; font-size: 1.125rem; justify-content: center; margin-top: 1rem;">
+                <i class="ph-fill ph-magic-wand"></i> Calculate Smart Estimate
+            </button>
+        </form>
+
+        <!-- Result Section -->
+        <div id="result-container"
+            style="display: none; margin-top: 2rem; padding-top: 2rem; border-top: 1px solid #e2e8f0; text-align: center; animation: slideUp 0.3s ease-out;">
+            
+            <p style="color: var(--text-muted); font-weight: 500; margin-bottom: 0.5rem;">Intelligent Price Estimate</p>
+            <h2 id="estimated-price"
+                style="font-size: 3rem; font-weight: 700; color: var(--primary-color); margin-bottom: 0.5rem;">₹ --</h2>
+            
+            <div style="color: #64748b; margin-bottom: 1.5rem; font-size: 0.95rem;">
+                Base Price: <strong id="base-price">₹ --</strong> | Impact Multiplier: <strong id="multiplier" style="color: #10b981;">1.00x</strong>
+            </div>
+
+            <div
+                style="display: inline-flex; align-items: center; gap: 0.5rem; background: #f1f5f9; padding: 0.5rem 1rem; border-radius: 20px; font-size: 0.875rem; color: #475569;">
+                <i class="ph-fill ph-info"></i>
+                <span>Data Confidence: <strong id="confidence-level">High</strong></span>
+            </div>
+        </div>
+
+        <!-- Loading Spinner -->
+        <div id="loading" style="display: none; margin-top: 2rem; text-align: center;">
+            <i class="ph ph-spinner ph-spin" style="font-size: 2rem; color: var(--primary-color);"></i>
+            <p style="color: var(--text-muted); margin-top: 0.5rem;">Analyzing neighborhood data...</p>
+        </div>
+    </div>
+</div>
+
+<style>
+    @keyframes slideUp {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    input:focus, select:focus { border-color: var(--primary-color) !important; }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const form = document.getElementById('location-intelligence-form');
+        const resultContainer = document.getElementById('result-container');
+        const loading = document.getElementById('loading');
+        
+        form.addEventListener('submit', (e) => {
+            e.preventDefault();
+
+            resultContainer.style.display = 'none';
+            loading.style.display = 'block';
+
+            const data = {
+                city: document.getElementById('city').value,
+                bhk: document.getElementById('bhk').value,
+                area: document.getElementById('area').value,
+                schools: document.getElementById('schools').value,
+                hospitals: document.getElementById('hospitals').value,
+                metro_distance: document.getElementById('metro_distance').value,
+                traffic: document.getElementById('traffic').value,
+                crime: document.getElementById('crime').value,
+                pollution: document.getElementById('pollution').value,
+            };
+            
+            const params = new URLSearchParams(data).toString();
+
+            fetch(`/api/location-intelligence/?${params}`)
+                .then(res => res.json())
+                .then(data => {
+                    loading.style.display = 'none';
+                    if (data.error) {
+                        alert(data.error);
+                    } else {
+                        document.getElementById('estimated-price').textContent = data.estimated_price;
+                        document.getElementById('base-price').textContent = data.base_price_formatted;
+                        
+                        const multiplierEl = document.getElementById('multiplier');
+                        multiplierEl.textContent = data.multiplier;
+                        if(parseFloat(data.multiplier) < 1.0) {
+                            multiplierEl.style.color = '#ef4444';
+                        } else {
+                            multiplierEl.style.color = '#10b981';
+                        }
+                        
+                        document.getElementById('confidence-level').textContent = data.confidence;
+                        resultContainer.style.display = 'block';
+                    }
+                })
+                .catch(err => {
+                    loading.style.display = 'none';
+                    console.error(err);
+                    alert("An error occurred. Please try again.");
+                });
+        });
+    });
+</script>
+{% endblock %}

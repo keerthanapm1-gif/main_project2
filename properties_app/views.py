@@ -6,8 +6,9 @@ from django.contrib.auth.forms import AuthenticationForm
 from django.contrib import messages
 from django.core.paginator import Paginator
 from django.db.models import Q, Count, Avg
-from .models import Property, Wishlist, PropertyReview, Inquiry, Lease, PaymentSplit, TaxReport, SavedSearch
+from .models import Property, Wishlist, PropertyReview, Inquiry, Lease, PaymentSplit, TaxReport, SavedSearch, RecentlyViewed
 from .forms import UserRegistrationForm, PropertyReviewForm, InquiryForm
+from .recommendation_service import RecommendationEngine
 
 def home(request):
     latest_properties = Property.objects.order_by('-created_at')[:6]
@@ -18,6 +19,15 @@ def home(request):
     rented_count = Property.objects.filter(status='rented').count()
     # Trending: top 4 most viewed properties
     trending_properties = Property.objects.order_by('-view_count')[:4]
+    
+    # Personalized Recommendations
+    recommendation_engine = RecommendationEngine(request.user)
+    recommended_properties = recommendation_engine.get_recommendations(limit=6)
+
+    wishlisted_property_ids = []
+    if request.user.is_authenticated:
+        wishlisted_property_ids = list(Wishlist.objects.filter(user=request.user).values_list('property_id', flat=True))
+
     context = {
         'properties': latest_properties,
         'total_properties': total_properties,
@@ -25,6 +35,8 @@ def home(request):
         'for_sale_count': for_sale_count,
         'rented_count': rented_count,
         'trending_properties': trending_properties,
+        'recommended_properties': recommended_properties,
+        'wishlisted_property_ids': wishlisted_property_ids,
     }
     return render(request, 'home.html', context)
 
@@ -94,10 +106,15 @@ def properties_list(request):
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
     
+    wishlisted_property_ids = []
+    if request.user.is_authenticated:
+        wishlisted_property_ids = list(Wishlist.objects.filter(user=request.user).values_list('property_id', flat=True))
+
     context = {
         'page_obj': page_obj, 
         'query': query,
-        'current_filters': request.GET
+        'current_filters': request.GET,
+        'wishlisted_property_ids': wishlisted_property_ids,
     }
     return render(request, 'properties.html', context)
 
@@ -113,6 +130,11 @@ def property_detail(request, pk):
     in_wishlist = False
     if request.user.is_authenticated:
         in_wishlist = Wishlist.objects.filter(user=request.user, property=prop).exists()
+        # Record recently viewed
+        RecentlyViewed.objects.update_or_create(
+            user=request.user, 
+            property=prop
+        )
         
     review_form = PropertyReviewForm()
     reviews = prop.reviews.all().order_by('-created_at')
@@ -170,6 +192,12 @@ def register_user(request):
             user = form.save(commit=False)
             user.set_password(form.cleaned_data['password'])
             user.save()
+            
+            # Save the selected role
+            role = form.cleaned_data.get('role', 'user')
+            user.profile.role = role
+            user.profile.save()
+            
             messages.success(request, 'Registration successful. Please log in.')
             return redirect('login')
     else:
@@ -381,23 +409,134 @@ def video_call_property(request, property_id):
     
     return redirect('video_call_room', room_name=room_name)
 
+import re
+from django.db.models import Q
+
 def chatbot_api(request):
     if request.method == 'POST':
-        user_message = request.POST.get('message', '').lower()
+        user_message = request.POST.get('message', '').lower().strip()
         
-        # Simple rule-based logic
+        # 1. Price Query Extraction (e.g., "under 50 lakhs", "below 1 crore")
+        price_limit = None
+        # Pattern to match "under/below/less than <number> lakhs/crores"
+        price_match = re.search(r'(?:under|below|less than|within|budget of)\s*(?:rs\.?|inr)?\s*([\d\.]+)\s*(lakh|crore|cr|l|k)?', user_message)
+        
+        if price_match:
+            try:
+                value = float(price_match.group(1))
+                unit = price_match.group(2)
+                if unit in ['lakh', 'l']:
+                    price_limit = value * 100000
+                elif unit in ['crore', 'cr']:
+                    price_limit = value * 10000000
+                elif unit == 'k':
+                    price_limit = value * 1000
+                else:
+                    # Assume lakhs if it's a small number, otherwise raw
+                    if value < 500:
+                        price_limit = value * 100000
+                    else:
+                        price_limit = value
+            except:
+                pass
+
+        # 2. BHK Extraction (e.g., "2bhk", "3 bhk")
+        bhk_count = None
+        bhk_match = re.search(r'(\d)\s*bhk', user_message)
+        if bhk_match:
+            bhk_count = int(bhk_match.group(1))
+
+        # 3. City Extraction
+        # Get all unique cities from database to match against the query
+        known_cities = list(Property.objects.values_list('city', flat=True).distinct())
+        target_city = None
+        for city in known_cities:
+            if city.lower() in user_message:
+                target_city = city
+                break
+        
+        # If no city match found in DB, look for common city keywords as fallback
+        if not target_city:
+            common_cities = ['mumbai', 'delhi', 'bangalore', 'chennai', 'pune', 'hyderabad', 'kolkata', 'gurgaon', 'noida']
+            for city in common_cities:
+                if city in user_message:
+                    target_city = city
+                    break
+
+        # 4. Location/IT Park Query Extraction
+        it_park_query = False
+        if 'it park' in user_message or 'tech park' in user_message or 'office' in user_message or 'work' in user_message:
+            it_park_query = True
+
+        # 3. Formulate Database Query
+        properties = Property.objects.filter(status='available')
+        triggered_query = False
+        
+        if price_limit:
+            properties = properties.filter(price__lte=price_limit)
+            triggered_query = True
+        
+        if bhk_count:
+            properties = properties.filter(bhk=bhk_count)
+            triggered_query = True
+            
+        if target_city:
+            properties = properties.filter(city__icontains=target_city)
+            triggered_query = True
+        
+        if it_park_query:
+            # Search in title, description, address, or near facilities
+            properties = properties.filter(
+                Q(description__icontains='IT Park') | 
+                Q(address__icontains='IT Park') |
+                Q(city__icontains='IT Park') |
+                Q(facilities__name__icontains='IT Park')
+            ).distinct()
+            triggered_query = True
+        
+        # Handle "best" or "top" keywords
+        is_best = 'best' in user_message or 'top' in user_message or 'good' in user_message
+        if is_best:
+            triggered_query = True
+
+        # Generate Response
+        if triggered_query:
+            recommended = properties.order_by('-view_count')[:3]
+            if recommended.exists():
+                response_text = f"I found {properties.count()} properties matching your request. Here are the top picks:"
+                props_data = []
+                for p in recommended:
+                    props_data.append({
+                        'id': p.id,
+                        'title': p.title,
+                        'price': f"₹{int(p.price):,}",
+                        'city': p.city,
+                        'bhk': p.bhk,
+                        'property_type': p.get_property_type_display(),
+                        'status': p.get_status_display(),
+                        'image': p.image.url if p.image else None,
+                        'url': f"/properties/{p.id}/"
+                    })
+                return JsonResponse({
+                    'response': response_text,
+                    'properties': props_data
+                })
+            else:
+                response_text = "I couldn't find any properties matching those exact criteria. Try adjusting your budget or location!"
+        
+        # 4. General Fallback Logic
         if 'hello' in user_message or 'hi' in user_message:
-            response = "Hello! Welcome to Luxia Real Estate. How can I help you today?"
+            response = "Hello! Welcome to Luxia Real Estate. How can I help you today? Try asking for houses under a budget or near IT parks!"
         elif 'price' in user_message or 'cost' in user_message:
-            response = "Property prices vary by location and type. You can use the price filter on our Properties page to find homes within your budget."
+            response = "Property prices vary by location. For example, you can ask 'Best house under 60 lakhs'!"
         elif 'location' in user_message or 'city' in user_message:
-            response = "We have properties across India! Try searching for your desired city on the Properties page."
+            response = "We have properties across India! Try searching for a specific city or ask about areas near IT parks."
         elif 'contact' in user_message or 'seller' in user_message:
-            response = "You can contact a seller directly from the property detail page by clicking 'Send Inquiry' or 'Chat with Seller' if you're logged in."
+            response = "You can contact sellers directly from property pages. Just look for the 'Chat with Seller' button."
         elif 'rent' in user_message:
-            response = "Yes, we have properties for rent. Just filter by 'Rented' or search for your needs on the Properties page."
+            response = "Yes, we list many rental properties. Use the 'Status' filter on our properties page to see what's available."
         else:
-            response = "I'm a simple bot, so I might not understand everything. Feel free to browse our properties or contact support at contact@luxia.in."
+            response = "I'm the Luxia Assistant. I can help you find homes by budget (e.g., 'under 50 lakhs') or near IT parks. How can I assist you?"
             
         return JsonResponse({'response': response})
     return JsonResponse({'error': 'Invalid request'}, status=400)
@@ -535,25 +674,47 @@ def payment_splitter(request, property_id):
     prop = get_object_or_404(Property, pk=property_id)
     leases = Lease.objects.filter(property=prop)
     payments = PaymentSplit.objects.filter(lease__in=leases).order_by('-payment_date')
-    
+    return render(request, 'payment_splitter.html', {'property': prop, 'leases': leases, 'payments': payments})
+
+@login_required
+def mock_payment_gateway(request):
     if request.method == 'POST':
+        property_id = request.POST.get('property_id')
+        lease_id = request.POST.get('lease_id')
+        amount = request.POST.get('amount')
+        is_deposit_str = request.POST.get('is_deposit', 'false')
+        is_deposit = is_deposit_str == 'true'
+
+        context = {
+            'property_id': property_id,
+            'lease_id': lease_id,
+            'amount': amount,
+            'is_deposit_str': is_deposit_str,
+            'is_deposit': is_deposit,
+        }
+        return render(request, 'payment_gateway.html', context)
+    return redirect('home')
+
+@login_required
+def process_online_payment(request):
+    if request.method == 'POST':
+        property_id = request.POST.get('property_id')
         lease_id = request.POST.get('lease_id')
         amount = request.POST.get('amount')
         is_deposit = request.POST.get('is_deposit') == 'true'
-        
+
         if lease_id and amount:
             lease = get_object_or_404(Lease, pk=lease_id)
             PaymentSplit.objects.create(
                 lease=lease,
                 amount_paid=amount,
-                is_deposit=is_deposit
+                is_deposit=is_deposit,
+                status='released' if not is_deposit else 'escrow' # Online payment is considered processed
             )
-            messages.success(request, 'Payment successfully processed and routed via Escrow Splitter.')
+            messages.success(request, 'Secure Online Payment was successful.')
             return redirect('payment_splitter', property_id=property_id)
-            
-    return render(request, 'payment_splitter.html', {'property': prop, 'leases': leases, 'payments': payments})
 
-    return render(request, 'payment_splitter.html', {'property': prop, 'leases': leases, 'payments': payments})
+    return redirect('home')
 
 # ─── EMI Calculator ────────────────────────────────────────────
 def emi_calculator(request):
@@ -567,7 +728,10 @@ def compare_properties(request):
     return render(request, 'compare.html', {'properties': properties})
 
 # ─── Post a Property ───────────────────────────────────────────
+from .decorators import role_required
+
 @login_required
+@role_required(['admin', 'agent', 'user'])
 def post_property(request):
     if request.method == 'POST':
         try:
@@ -604,10 +768,35 @@ def post_property(request):
 
 
 # ─── Map View ───────────────────────────────────────────────────
+import math
+
+def calculate_distance(lat1, lon1, lat2, lon2):
+    """
+    Calculate the great-circle distance between two points on the Earth
+    using the Haversine formula. Returns distance in kilometers.
+    """
+    R = 6371.0  # Earth radius in KM
+    
+    phi1, phi2 = math.radians(lat1), math.radians(lat2)
+    dphi = math.radians(lat2 - lat1)
+    dlambda = math.radians(lon2 - lon1)
+    
+    a = math.sin(dphi / 2)**2 + \
+        math.cos(phi1) * math.cos(phi2) * math.sin(dlambda / 2)**2
+    
+    c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
+    return R * c
+
 def map_view(request):
     """Render an interactive Leaflet map with all properties that have coordinates."""
     all_properties = Property.objects.all()
     properties_json = []
+    
+    # Track min/max for normalization
+    prices = [float(p.price) for p in all_properties if p.price]
+    min_price = min(prices) if prices else 0
+    max_price = max(prices) if prices else 100000000
+
     for p in all_properties:
         lat = float(p.latitude) if p.latitude else None
         lng = float(p.longitude) if p.longitude else None
@@ -631,8 +820,61 @@ def map_view(request):
         'properties_json': _json.dumps(properties_json),
         'total_on_map': len(properties_json),
         'total_properties': all_properties.count(),
+        'min_price': min_price,
+        'max_price': max_price,
     }
     return render(request, 'map_view.html', context)
+
+def api_nearby_properties(request):
+    """
+    API endpoint to fetch properties within a given radius of a point.
+    Expects GET params: lat, lng, radius (in KM, optional, default 10)
+    """
+    lat = request.GET.get('lat')
+    lng = request.GET.get('lng')
+    radius = request.GET.get('radius', 10) # default 10km
+    
+    if not lat or not lng:
+        return JsonResponse({'error': 'Missing lat or lng parameters'}, status=400)
+    
+    try:
+        lat = float(lat)
+        lng = float(lng)
+        radius = float(radius)
+    except ValueError:
+        return JsonResponse({'error': 'Invalid lat, lng or radius parameters'}, status=400)
+    
+    all_props = Property.objects.exclude(latitude__isnull=True).exclude(longitude__isnull=True)
+    nearby_props = []
+    
+    for p in all_props:
+        dist = calculate_distance(lat, lng, float(p.latitude), float(p.longitude))
+        if dist <= radius:
+            nearby_props.append({
+                'id': p.id,
+                'title': p.title,
+                'price': float(p.price),
+                'formatted_price': f"₹{int(p.price):,}",
+                'city': p.city,
+                'bhk': p.bhk,
+                'sqft': p.sqft,
+                'image_url': p.image.url if p.image else '',
+                'distance': round(dist, 2),
+                'property_type': p.get_property_type_display(),
+                'url': f"/property/{p.id}/"
+            })
+            
+    # Sort by distance
+    nearby_props.sort(key=lambda x: x['distance'])
+    
+    return JsonResponse({
+        'center': {'lat': lat, 'lng': lng},
+        'radius': radius,
+        'count': len(nearby_props),
+        'properties': nearby_props[:10] # return top 10
+    })
+
+
 
 
 # ─── Seller Profile ─────────────────────────────────────────────
@@ -746,4 +988,221 @@ def loan_eligibility(request):
             messages.error(request, f'Calculation error: {e}')
 
     return render(request, 'loan_eligibility.html', {'result': result})
+
+@login_required
+def personalized_recommendations(request):
+    """
+    Dedicated page for personalized property suggestions.
+    """
+    engine = RecommendationEngine(request.user)
+    recommendations = engine.get_recommendations(limit=12)
+    
+    wishlisted_property_ids = list(Wishlist.objects.filter(user=request.user).values_list('property_id', flat=True))
+    
+    context = {
+        'recommended_properties': recommendations,
+        'wishlisted_property_ids': wishlisted_property_ids,
+    }
+    return render(request, 'recommendations.html', context)
+
+def location_intelligence(request):
+    """Render the location intelligence UI"""
+    return render(request, 'location_intelligence.html')
+
+def api_location_intelligence(request):
+    """Handle AJAX requests for price estimation based on location intelligence factors."""
+    if request.method == 'GET':
+        city = request.GET.get('city', '').strip()
+        bhk = request.GET.get('bhk')
+        area = request.GET.get('area')
+        
+        # New Factors
+        schools = request.GET.get('schools', 0)
+        hospitals = request.GET.get('hospitals', 0)
+        metro_distance = request.GET.get('metro_distance', 5) # in km
+        traffic_level = request.GET.get('traffic', 'medium')
+        crime_rate = request.GET.get('crime', 'low')
+        pollution = request.GET.get('pollution', 'moderate')
+        
+        if not city or not bhk or not area:
+            return JsonResponse({'error': 'Missing parameters'}, status=400)
+            
+        try:
+            bhk = int(bhk)
+            area = float(area)
+            schools = int(schools)
+            hospitals = int(hospitals)
+            metro_distance = float(metro_distance)
+        except ValueError:
+            return JsonResponse({'error': 'Invalid parameters'}, status=400)
+            
+        # Base price per sqft calculation
+        similar_properties = Property.objects.filter(city__icontains=city, bhk=bhk)
+        
+        if similar_properties.exists():
+            total_price = sum(p.price for p in similar_properties)
+            total_area = sum(p.sqft for p in similar_properties)
+            if total_area > 0:
+                base_price_per_sqft = float(total_price) / float(total_area)
+            else:
+                base_price_per_sqft = 8000
+        else:
+            fallback_rates = {
+                'mumbai': 25000,
+                'delhi': 15000,
+                'bangalore': 10000,
+                'chennai': 8000,
+                'pune': 7500,
+            }
+            city_low = city.lower()
+            base_price_per_sqft = fallback_rates.get(city_low, 5000)
+            for k, v in fallback_rates.items():
+                if k in city_low:
+                    base_price_per_sqft = v
+                    break
+        
+        # Calculate base price
+        base_price = base_price_per_sqft * area
+        multiplier = 1.0
+        
+        # Apply multipliers for Location Intelligence
+        # 1. Schools (Max +10%)
+        multiplier += min(schools * 0.02, 0.10)
+        
+        # 2. Hospitals (Max +10%)
+        multiplier += min(hospitals * 0.02, 0.10)
+        
+        # 3. Metro Distance (Closer = Better, Max +15%, Far = No change or slight decrease)
+        if metro_distance <= 1.0:
+            multiplier += 0.15
+        elif metro_distance <= 3.0:
+            multiplier += 0.05
+        elif metro_distance > 10.0:
+            multiplier -= 0.05
+            
+        # 4. Traffic Level
+        if traffic_level == 'low':
+            multiplier += 0.05
+        elif traffic_level == 'high':
+            multiplier -= 0.05
+            
+        # 5. Crime Rate
+        if crime_rate == 'medium':
+            multiplier -= 0.10
+        elif crime_rate == 'high':
+            multiplier -= 0.25
+            
+        # 6. Pollution Index
+        if pollution == 'good':
+            multiplier += 0.05
+        elif pollution == 'poor':
+            multiplier -= 0.10
+        elif pollution == 'hazardous':
+            multiplier -= 0.20
+            
+        # Final estimated price
+        estimated_price = base_price * multiplier
+        
+        # Format price
+        if estimated_price >= 10000000:
+            formatted_price = f"₹ {estimated_price / 10000000:.2f} Cr"
+        elif estimated_price >= 100000:
+            formatted_price = f"₹ {estimated_price / 100000:.2f} Lac"
+        else:
+            formatted_price = f"₹ {estimated_price:,.0f}"
+            
+        return JsonResponse({
+            'estimated_price': formatted_price,
+            'base_price_formatted': f"₹ {base_price:,.0f}",
+            'multiplier': f"{multiplier:.2f}x",
+            'confidence': 'High' if similar_properties.count() >= 5 else ('Medium' if similar_properties.count() > 0 else 'Low')
+        })
+
+def smart_recommendation(request):
+    """Render the Smart Recommendation Engine UI"""
+    return render(request, 'smart_recommendation.html')
+
+def api_smart_recommendation(request):
+    """Handle AJAX requests for the smart recommendation engine."""
+    if request.method == 'GET':
+        budget = request.GET.get('budget')
+        lifestyle = request.GET.get('lifestyle')
+        family_size = request.GET.get('family_size')
+        commute = request.GET.get('commute')
+
+        if not budget or not lifestyle or not family_size or not commute:
+            return JsonResponse({'error': 'Missing parameters'}, status=400)
+
+        try:
+            budget = float(budget)
+            family_size = int(family_size)
+            commute = float(commute)
+        except ValueError:
+            return JsonResponse({'error': 'Invalid parameters'}, status=400)
+
+        # Base query
+        properties = Property.objects.all()
+
+        # 1. Budget Filter
+        # Allowing properties up to the budget, and somewhat below.
+        min_budget = budget * 0.5 # Example: properties not cheaper than 50% of budget
+        properties = properties.filter(price__lte=budget, price__gte=min_budget)
+
+        # 2. Family Size -> BHK Mapping
+        if family_size == 1:
+            properties = properties.filter(bhk__in=[1, 2])
+        elif family_size == 2:
+            properties = properties.filter(bhk__in=[2, 3])
+        elif family_size >= 4:
+            properties = properties.filter(bhk__gte=3)
+
+        # 3. Lifestyle Mapping
+        if lifestyle == 'student':
+            properties = properties.filter(property_type__in=['pg', 'apartment'])
+        elif lifestyle == 'luxury':
+            properties = properties.filter(property_type__in=['house', 'apartment', 'villa']).filter(price__gte=budget*0.8)
+        elif lifestyle == 'minimalist':
+            properties = properties.filter(property_type='apartment', bhk__lte=2)
+        elif lifestyle == 'family':
+            properties = properties.filter(property_type__in=['house', 'apartment'], bhk__gte=2)
+
+        # 4. Commute Distance
+        # Since we don't have user's work location, we will sort or filter heuristically.
+        # Let's say if commute < 5km, we assume they want city center properties (mock by sorting high price first as proxy for center)
+        # We will just limit the results to a manageable number.
+        if commute <= 5:
+            properties = properties.order_by('-price')
+        else:
+            properties = properties.order_by('price')
+
+        # Limit to top 12 recommendations
+        recommendations = properties[:12]
+
+        results = []
+        for prop in recommendations:
+            image_url = prop.image.url if prop.image else 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&w=800&q=80'
+            
+            # Format price nicely
+            price_val = float(prop.price)
+            if price_val >= 10000000:
+                formatted_price = f"₹ {price_val / 10000000:.2f} Cr"
+            elif price_val >= 100000:
+                formatted_price = f"₹ {price_val / 100000:.2f} Lac"
+            else:
+                formatted_price = f"₹ {price_val:,.0f}"
+
+            results.append({
+                'id': prop.id,
+                'title': prop.title,
+                'city': prop.city,
+                'state': prop.state,
+                'bhk': prop.bhk,
+                'sqft': prop.sqft,
+                'formatted_price': formatted_price,
+                'property_type_display': prop.get_property_type_display(),
+                'image_url': image_url
+            })
+
+        return JsonResponse({'recommendations': results})
+
 

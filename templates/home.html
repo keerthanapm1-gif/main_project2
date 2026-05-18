@@ -72,6 +72,10 @@
                             style="position:absolute; bottom:10px; right:10px; background:rgba(0,0,0,0.6); color:white; font-size:0.72rem; padding:0.2rem 0.6rem; border-radius:20px; z-index:2; display:flex;align-items:center;gap:4px;">
                             <i class="ph-fill ph-eye"></i> {{ prop.view_count }} views
                         </div>
+                        <button class="wishlist-toggle-btn" data-url="{% url 'toggle_wishlist' prop.id %}"
+                            style="position: absolute; top: 10px; right: 10px; background: white; border: none; border-radius: 50%; width: 32px; height: 32px; cursor: pointer; z-index: 10; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 5px rgba(0,0,0,0.2);" onclick="event.preventDefault(); toggleWishlist(this);">
+                            <i class="{% if prop.id in wishlisted_property_ids %}ph-fill{% else %}ph{% endif %} ph-heart" style="color: var(--primary-color);"></i>
+                        </button>
                         {% if prop.image %}
                         <img src="{{ prop.image.url }}" alt="{{ prop.title }}"
                             style="width:100%;height:100%;object-fit:cover;">
@@ -90,6 +94,56 @@
                         <div style="display:flex; gap:1rem; font-size:0.78rem; color:#64748b;">
                             <span style="color:#94a3b8;">🛏 {{ prop.bhk }} BHK</span>
                             <span style="color:#94a3b8;">📐 {{ prop.sqft }} sqft</span>
+                        </div>
+                    </div>
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+{% endif %}
+
+<!-- ✨ Recommended for You Section -->
+{% if recommended_properties %}
+<section style="background: #f8fafc; padding: 4rem 0;">
+    <div class="container">
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:2rem; flex-wrap:wrap; gap:1rem;">
+            <div>
+                <span style="color: var(--primary-color); font-weight: 600; text-transform: uppercase; letter-spacing: 1px; font-size: 0.8rem;">✨ Personalized For You</span>
+                <h2 style="margin: 0; font-size: 1.8rem;">Recommended for You</h2>
+                <p style="color: var(--text-muted); margin-top: 0.5rem;">Based on your activity and preferences</p>
+            </div>
+            {% if user.is_authenticated %}
+            <a href="{% url 'personalized_recommendations' %}" style="color: var(--primary-color); font-weight: 600; text-decoration: none; display: flex; align-items: center; gap: 0.5rem;">
+                More Recommendations <i class="ph ph-arrow-right"></i>
+            </a>
+            {% endif %}
+        </div>
+        
+        <div class="property-grid" style="grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));">
+            {% for property in recommended_properties %}
+            <a href="{% url 'property_detail' property.id %}" style="text-decoration:none; color:inherit;">
+                <div class="property-card" style="background: white; transform: unset; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">
+                    <div class="property-img">
+                        <div class="property-badge" style="background: #10b981;">AI Pick</div>
+                        <button class="wishlist-toggle-btn" data-url="{% url 'toggle_wishlist' property.id %}"
+                            style="position: absolute; top: 10px; right: 10px; background: white; border: none; border-radius: 50%; width: 32px; height: 32px; cursor: pointer; z-index: 10; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 5px rgba(0,0,0,0.2);" onclick="event.preventDefault(); toggleWishlist(this);">
+                            <i class="{% if property.id in wishlisted_property_ids %}ph-fill{% else %}ph{% endif %} ph-heart" style="color: var(--primary-color);"></i>
+                        </button>
+                        {% if property.image %}
+                        <img src="{{ property.image.url }}" alt="{{ property.title }}">
+                        {% else %}
+                        <img src="https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&w=800&q=80" alt="Placeholder">
+                        {% endif %}
+                    </div>
+                    <div class="property-content">
+                        <div class="property-price">₹ {{ property.price|intcomma }}</div>
+                        <h3 class="property-title" style="font-size: 1.1rem;">{{ property.title }}</h3>
+                        <div class="property-address"><i class="ph-fill ph-map-pin"></i> {{ property.city }}, {{ property.state }}</div>
+                        <div class="property-features" style="border-top: 1px solid #f1f5f9; padding-top: 1rem; margin-top: 1rem;">
+                            <span class="feature"><i class="ph-fill ph-bed"></i> {{ property.bhk }} BHK</span>
+                            <span class="feature"><i class="ph-fill ph-square-logo"></i> {{ property.sqft }} Sq.Ft.</span>
                         </div>
                     </div>
                 </div>
@@ -141,6 +195,10 @@
             <div class="property-card">
                 <div class="property-img">
                     <div class="property-badge" style="background: var(--primary-color);">{{ property.get_status_display }}</div>
+                    <button class="wishlist-toggle-btn" data-url="{% url 'toggle_wishlist' property.id %}"
+                        style="position: absolute; top: 10px; right: 10px; background: white; border: none; border-radius: 50%; width: 32px; height: 32px; cursor: pointer; z-index: 10; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 5px rgba(0,0,0,0.2);" onclick="event.preventDefault(); toggleWishlist(this);">
+                        <i class="{% if property.id in wishlisted_property_ids %}ph-fill{% else %}ph{% endif %} ph-heart" style="color: var(--primary-color);"></i>
+                    </button>
                     {% if property.image %}
                     <img src="{{ property.image.url }}" alt="{{ property.title }}">
                     {% else %}
@@ -191,5 +249,34 @@
             document.getElementById('search-status').value = tab.dataset.status;
         });
     });
+
+    function toggleWishlist(btn) {
+        const url = btn.getAttribute('data-url');
+        fetch(url, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}',
+            }
+        })
+        .then(response => {
+            if (!response.ok) {
+                // If unauthorized or error, redirect to login
+                window.location.href = "{% url 'login' %}?next={{ request.path }}";
+                throw new Error("Not logged in");
+            }
+            return response.json();
+        })
+        .then(data => {
+            const icon = btn.querySelector('i');
+            if (data.status === 'added') {
+                icon.classList.remove('ph');
+                icon.classList.add('ph-fill');
+            } else if (data.status === 'removed') {
+                icon.classList.remove('ph-fill');
+                icon.classList.add('ph');
+            }
+        })
+        .catch(error => console.error('Error:', error));
+    }
 </script>
 {% endblock %}

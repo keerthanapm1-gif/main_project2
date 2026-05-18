@@ -30,9 +30,9 @@ class InquiryInline(admin.TabularInline):
 
 @admin.register(Property)
 class PropertyAdmin(admin.ModelAdmin):
-    list_display = ('title', 'property_type', 'status', 'city', 'price', 'bhk', 'sqft', 'survey_number', 'seller_name')
+    list_display = ('title', 'property_type', 'status', 'city', 'price', 'bhk', 'sqft', 'survey_number', 'seller_name', 'agent_name')
     list_filter = ('property_type', 'status', 'city', 'bhk', 'state')
-    search_fields = ('title', 'address', 'city', 'survey_number')
+    search_fields = ('title', 'address', 'city', 'survey_number', 'agent_name')
     inlines = [FacilityInline, PropertyImageInline, PropertyVideoInline, PriceHistoryInline, PropertyReviewInline, InquiryInline]
 
 @admin.register(Wishlist)
@@ -57,3 +57,24 @@ admin.site.register(Facility)
 admin.site.register(PropertyImage)
 admin.site.register(PropertyVideo)
 admin.site.register(PriceHistory)
+
+from django.contrib.auth.admin import UserAdmin
+from django.contrib.auth.models import User
+from .models import UserProfile
+
+class UserProfileInline(admin.StackedInline):
+    model = UserProfile
+    can_delete = False
+    verbose_name_plural = 'Profile'
+    fk_name = 'user'
+
+class CustomUserAdmin(UserAdmin):
+    inlines = (UserProfileInline, )
+
+    def get_inline_instances(self, request, obj=None):
+        if not obj:
+            return list()
+        return super(CustomUserAdmin, self).get_inline_instances(request, obj)
+
+admin.site.unregister(User)
+admin.site.register(User, CustomUserAdmin)

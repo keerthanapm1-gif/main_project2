@@ -4,6 +4,11 @@ from django.contrib.auth.models import User
 from .models import PropertyReview, Inquiry
 
 class UserRegistrationForm(forms.ModelForm):
+    ROLE_CHOICES = (
+        ('agent', 'Agent'),
+        ('user', 'User'),
+    )
+    role = forms.ChoiceField(choices=ROLE_CHOICES, widget=forms.Select(attrs={'class': 'form-input'}))
     password = forms.CharField(widget=forms.PasswordInput(attrs={'class': 'form-input', 'placeholder': 'Password'}))
     confirm_password = forms.CharField(widget=forms.PasswordInput(attrs={'class': 'form-input', 'placeholder': 'Confirm Password'}))
     

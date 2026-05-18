@@ -11,8 +11,9 @@
             <div class="card shadow-sm p-4 h-100">
                 <h4>Simulate New Payment</h4>
                 <hr>
-                <form method="POST">
+                <form method="POST" action="{% url 'mock_payment_gateway' %}">
                     {% csrf_token %}
+                    <input type="hidden" name="property_id" value="{{ property.id }}">
                     <div class="mb-3">
                         <label>Select Lease</label>
                         <select name="lease_id" class="form-select" required>
@@ -30,8 +31,7 @@
                         <label class="form-check-label" for="is_deposit">This is a Security Deposit (100%
                             Escrow)</label>
                     </div>
-                    <button type="submit" class="btn btn-success"><i class="fas fa-money-bill-wave"></i> Process
-                        Payment</button>
+                    <button type="submit" class="btn btn-success"><i class="fas fa-lock"></i> Proceed to Secure Gateway</button>
                 </form>
             </div>
         </div>

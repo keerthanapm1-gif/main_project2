@@ -1,0 +1,149 @@
+{% extends 'base.html' %}
+{% block title %}Secure Payment Gateway{% endblock %}
+
+{% block content %}
+<div class="container mt-5 mb-5 pb-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <div class="card shadow border-0 rounded-4">
+                <div class="card-header bg-primary text-white text-center py-3 rounded-top-4">
+                    <h4 class="mb-0"><i class="fas fa-lock me-2"></i>Secure Payment Gateway</h4>
+                </div>
+                <div class="card-body p-4 p-md-5">
+                    <div class="text-center mb-4">
+                        <h5 class="text-muted mb-1">Total Amount Payable</h5>
+                        <h2 class="text-dark fw-bold display-5">₹<span id="displayAmount">{{ amount }}</span></h2>
+                        {% if is_deposit %}
+                        <span class="badge bg-info text-dark rounded-pill px-3 py-2 mt-2"><i class="fas fa-shield-alt me-1"></i> Security Deposit (Escrow)</span>
+                        {% else %}
+                        <span class="badge bg-secondary rounded-pill px-3 py-2 mt-2"><i class="fas fa-home me-1"></i> Rent Payment</span>
+                        {% endif %}
+                    </div>
+
+                    <form action="{% url 'process_online_payment' %}" method="POST" id="paymentForm">
+                        {% csrf_token %}
+                        <!-- Hidden fields to carry the data to the final view -->
+                        <input type="hidden" name="property_id" value="{{ property_id }}">
+                        <input type="hidden" name="lease_id" value="{{ lease_id }}">
+                        <input type="hidden" name="amount" value="{{ amount }}">
+                        <input type="hidden" name="is_deposit" value="{{ is_deposit_str }}">
+
+                        <ul class="nav nav-pills nav-fill mb-4 custom-pills" id="pills-tab" role="tablist">
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link active rounded-pill fw-semibold" id="pills-card-tab" data-bs-toggle="pill" data-bs-target="#pills-card" type="button" role="tab" aria-selected="true"><i class="far fa-credit-card me-1"></i> Card</button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link rounded-pill fw-semibold" id="pills-upi-tab" data-bs-toggle="pill" data-bs-target="#pills-upi" type="button" role="tab" aria-selected="false"><i class="fas fa-mobile-alt me-1"></i> UPI</button>
+                            </li>
+                        </ul>
+                        
+                        <div class="tab-content" id="pills-tabContent">
+                            <!-- Card Payment Tab -->
+                            <div class="tab-pane fade show active" id="pills-card" role="tabpanel" tabindex="0">
+                                <div class="mb-3">
+                                    <label class="form-label fw-semibold">Card Number</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text bg-light"><i class="fas fa-credit-card"></i></span>
+                                        <input type="text" class="form-control" placeholder="0000 0000 0000 0000" maxlength="19" required>
+                                    </div>
+                                </div>
+                                <div class="row mb-4">
+                                    <div class="col-6">
+                                        <label class="form-label fw-semibold">Valid Thru</label>
+                                        <input type="text" class="form-control" placeholder="MM/YY" maxlength="5" required>
+                                    </div>
+                                    <div class="col-6">
+                                        <label class="form-label fw-semibold">CVV</label>
+                                        <input type="password" class="form-control" placeholder="123" maxlength="3" required>
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label fw-semibold">Name on Card</label>
+                                    <input type="text" class="form-control" placeholder="John Doe" required>
+                                </div>
+                            </div>
+                            
+                            <!-- UPI Payment Tab -->
+                            <div class="tab-pane fade" id="pills-upi" role="tabpanel" tabindex="0">
+                                <div class="text-center mb-4 mt-3">
+                                    <img src="https://upload.wikimedia.org/wikipedia/commons/e/e1/UPI-Logo-vector.svg" alt="UPI" height="40" class="mb-3">
+                                    <div class="mb-3 text-start">
+                                        <label class="form-label fw-semibold">Virtual Payment Address (VPA)</label>
+                                        <input type="text" class="form-control" placeholder="username@upi" disabled>
+                                        <small class="text-muted d-block mt-2"><i class="fas fa-info-circle"></i> Selecting UPI will send a prompt directly to your phone. (Simulated)</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="d-grid mt-4">
+                            <button type="submit" class="btn btn-primary btn-lg rounded-pill fw-bold shadow-sm" id="payButton">
+                                Pay ₹{{ amount }} Securely <i class="fas fa-arrow-right ms-2"></i>
+                            </button>
+                        </div>
+                        
+                        <div class="text-center mt-3">
+                            <small class="text-muted"><i class="fas fa-lock text-success me-1"></i> Payments are 100% secure & encrypted.</small>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <div class="text-center mt-3">
+                <a href="{% url 'payment_splitter' property_id %}" class="text-decoration-none text-muted"><i class="fas fa-arrow-left me-1"></i> Cancel & Return to Dashboard</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Add some premium styling for the gateway */
+    .custom-pills .nav-link {
+        color: #495057;
+        transition: all 0.3s ease;
+    }
+    .custom-pills .nav-link.active {
+        background-color: #0d6efd;
+        color: white;
+        box-shadow: 0 4px 6px -1px rgba(13, 110, 253, 0.2);
+    }
+    #pills-upi-tab:not(.active) {
+        opacity: 0.7;
+    }
+    #payButton {
+        background: linear-gradient(135deg, #0d6efd, #0052cc);
+        border: none;
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+    #payButton:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 15px rgba(13, 110, 253, 0.3) !important;
+    }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const payButton = document.getElementById('payButton');
+        const paymentForm = document.getElementById('paymentForm');
+        
+        // Handle input fields switching for the mock
+        const cardTab = document.getElementById('pills-card-tab');
+        const upiTab = document.getElementById('pills-upi-tab');
+        const cardInputs = document.querySelectorAll('#pills-card input');
+        
+        upiTab.addEventListener('click', function() {
+            cardInputs.forEach(input => input.removeAttribute('required'));
+        });
+        
+        cardTab.addEventListener('click', function() {
+            cardInputs.forEach(input => input.setAttribute('required', 'required'));
+        });
+
+        // Add a nice loading state
+        paymentForm.addEventListener('submit', function(e) {
+            payButton.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span> Processing Securely...';
+            payButton.classList.add('disabled');
+        });
+    });
+</script>
+{% endblock %}
